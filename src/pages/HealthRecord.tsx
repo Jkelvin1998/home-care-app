@@ -53,6 +53,7 @@ export default function HealthRecord() {
       <div style={{ padding: 20 }}>
          <h2>Health Records</h2>
 
+         <label>Temperature:</label>
          <input
             type="number"
             step={0.1}
@@ -60,18 +61,21 @@ export default function HealthRecord() {
             onChange={(e) => setTemperature(Number(e.target.value) || 0)}
          />
 
+         <label>Oxygen:</label>
          <input
             type="number"
             value={oxygen}
             onChange={(e) => setOxygen(Number(e.target.value) || 0)}
          />
 
+         <label>Pulse Rate:</label>
          <input
             type="number"
             value={pulseRate}
             onChange={(e) => setPulseRate(Number(e.target.value) || 0)}
          />
 
+         <label>Symptoms:</label>
          <input
             type="text"
             placeholder="Symptoms (e.g. Fever, Cough)"
