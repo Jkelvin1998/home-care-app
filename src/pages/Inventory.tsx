@@ -9,13 +9,14 @@ export default function Inventory() {
    const [quantity, setQuantity] = useState(1);
 
    const addItem = () => {
-      if (!name) return;
+      const trimmed = name.trim();
+      if (!trimmed) return;
 
-      setItems([
-         ...items,
+      setItems((prev) => [
+         ...prev,
          {
             id: uuid(),
-            name,
+            name: trimmed,
             quantity,
          },
       ]);
@@ -28,15 +29,21 @@ export default function Inventory() {
       <div style={{ padding: 20 }}>
          <h2>Inventory</h2>
 
+         <label htmlFor="item-name">Item Name:</label>
          <input
             type="text"
+            id="item-name"
             placeholder="Item name"
             value={name}
             onChange={(e) => setName(e.target.value)}
          />
 
+         <label htmlFor="quantity">Quantity</label>
          <input
             type="number"
+            id="quantity"
+            min={1}
+            step={1}
             value={quantity}
             onChange={(e) => setQuantity(Number(e.target.value))}
          />
