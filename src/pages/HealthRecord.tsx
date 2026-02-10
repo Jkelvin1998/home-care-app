@@ -196,15 +196,24 @@ export default function HealthRecord() {
       : undefined;
 
    return (
-      <div style={{ padding: 20 }}>
-         <h2>Health Records</h2>
+      <div className="mx-auto max-w-5xl p-6">
+         <h2 className="text-2xl font-semibold text-slate-900">
+            Health Records
+         </h2>
 
-         <section style={{ marginBottom: 24 }}>
-            <h3>Family Members</h3>
+         <section className="mt-6">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+               <h3 className="text-lg font-semibold text-slate-900">
+                  Family Members
+               </h3>
 
-            <button onClick={openAddMemberForm} style={{ marginBottom: 12 }}>
-               + Add Family Member
-            </button>
+               <button
+                  onClick={openAddMemberForm}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+               >
+                  + Add Family Member
+               </button>
+            </div>
 
             <MemberForm
                isOpen={isMemberFormOpen}
@@ -217,6 +226,7 @@ export default function HealthRecord() {
                memberGender={memberGender}
                memberWeight={memberWeight}
                memberHeight={memberHeight}
+               profileImage={memberProfileImage}
                setMemberName={setMemberName}
                setMemberDob={setMemberDob}
                setMemberGender={setMemberGender}
@@ -234,8 +244,10 @@ export default function HealthRecord() {
             />
          </section>
 
-         <section>
-            <h3>Member Profile</h3>
+         <section className="mt-6">
+            <h3 className="text-lg font-semibold text-slate-900">
+               Member Profile
+            </h3>
             <MemberProfileCard
                member={selectedMember}
                onEditProfile={openEditMemberForm}
@@ -243,8 +255,10 @@ export default function HealthRecord() {
             />
          </section>
 
-         <section style={{ marginTop: 24 }}>
-            <h3>Record Health Metrics</h3>
+         <section className="mt-6">
+            <h3 className="text-lg font-semibold text-slate-900">
+               Record Health Metrics
+            </h3>
 
             <HealthMetricsForm
                temperature={temperature}

@@ -29,56 +29,65 @@ export default function HealthMetricsForm({
 }: HealthMetricsFormProps) {
    return (
       <>
-         <div style={{ display: 'grid', gap: 12, maxWidth: 520 }}>
-            <label>
+         <div className="grid max-w-xl gap-3">
+            <label className="grid gap-1 text-sm font-semibold text-slate-700">
                Temperature (°C)
                <input
                   type="number"
                   step={0.1}
                   value={temperature}
                   onChange={(e) => setTemperature(Number(e.target.value) || 0)}
-                  style={{ width: '100%', marginTop: 4 }}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                />
             </label>
 
-            <label>
+            <label className="grid gap-1 text-sm font-semibold text-slate-700">
                Oxygen (%)
                <input
                   type="number"
                   value={oxygen}
                   onChange={(e) => setOxygen(Number(e.target.value) || 0)}
-                  style={{ width: '100%', marginTop: 4 }}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                />
             </label>
 
-            <label>
+            <label className="grid gap-1 text-sm font-semibold text-slate-700">
                Pulse Rate (bpm)
                <input
                   type="number"
                   value={pulseRate}
                   onChange={(e) => setPulseRate(Number(e.target.value) || 0)}
-                  style={{ width: '100%', marginTop: 4 }}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                />
             </label>
 
-            <label>
+            <label className="grid gap-1 text-sm font-semibold text-slate-700">
                Symptoms
                <input
                   type="text"
                   placeholder="Symptoms (e.g. Fever, Cough)"
                   value={symptomsInput}
                   onChange={(e) => setSymptomsInput(e.target.value)}
-                  style={{ width: '100%', marginTop: 4 }}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                />
             </label>
 
-            <div style={{ display: 'flex', gap: 8 }}>
-               <button onClick={onSaveRecord} disabled={!selectedMemberId}>
+            <div className="flex gap-2">
+               <button
+                  onClick={onSaveRecord}
+                  disabled={!selectedMemberId}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+               >
                   {isEditing ? 'Update Record' : 'Save Record'}
                </button>
 
                {isEditing && (
-                  <button onClick={onCancelEdit}>Cancel Edit</button>
+                  <button
+                     onClick={onCancelEdit}
+                     className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700"
+                  >
+                     Cancel Edit
+                  </button>
                )}
             </div>
          </div>

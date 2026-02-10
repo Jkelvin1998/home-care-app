@@ -9,6 +9,7 @@ type MemberFormProps = {
    memberGender: FamilyMember['gender'];
    memberWeight: number;
    memberHeight: number;
+   profileImage: string;
    setMemberName: (value: string) => void;
    setMemberDob: (value: string) => void;
    setMemberGender: (value: FamilyMember['gender']) => void;
@@ -28,6 +29,7 @@ export default function MemberForm({
    memberGender,
    memberWeight,
    memberHeight,
+   profileImage,
    setMemberName,
    setMemberDob,
    setMemberGender,
@@ -55,65 +57,53 @@ export default function MemberForm({
 
    return (
       <div
-         style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.45)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-         }}
+         className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
          onClick={onClose}
       >
          <div
-            style={{
-               backgroundColor: '#fff',
-               width: 'min(560px, calc(100vw - 32px)',
-               borderRadius: 12,
-               padding: 20,
-               boxSizing: 'border-box',
-            }}
+            className="w-full max-w-lg rounded-xl bg-white p-5 shadow-lg"
             onClick={(e) => e.stopPropagation()}
          >
-            <h3 style={{ marginTop: 0 }}>{title}</h3>
+            <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
 
-            <div style={{ display: 'grid', gap: 12 }}>
-               <label>
+            <div className="mt-4 grid gap-3">
+               <label className="grid gap-1 text-sm font-semibold text-slate-700">
                   Name
                   <input
                      type="text"
                      placeholder="Full name"
                      value={memberName}
                      onChange={(e) => setMemberName(e.target.value)}
-                     style={{ width: '100%', marginTop: 4 }}
+                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   />
                </label>
 
-               <label>
+               <label className="grid gap-1 text-sm font-semibold text-slate-700">
                   Date of Birth
                   <input
                      type="date"
                      value={memberDob}
                      onChange={(e) => setMemberDob(e.target.value)}
-                     style={{ width: '100%', marginTop: 4 }}
+                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   />
                </label>
 
-               <fieldset style={{ border: 'none', padding: 0, margin: 0 }}>
-                  <legend style={{ marginBottom: 8 }}>Gender</legend>
+               <fieldset className="space-y-2">
+                  <legend className="text-sm font-semibold text-slate-700">
+                     Gender
+                  </legend>
 
-                  <div style={{ display: 'flex', gap: 16 }}>
+                  <div className="flex flex-wrap gap-4 text-sm text-slate-700">
                      {(['Female', 'Male'] as FamilyMember['gender'][]).map(
                         (gender) => (
-                           <label key={gender}>
+                           <label className="font-semibold" key={gender}>
                               <input
                                  type="radio"
                                  name="memberGender"
                                  value={gender}
                                  checked={memberGender === gender}
                                  onChange={() => setMemberGender(gender)}
-                                 style={{ marginRight: 6 }}
+                                 className="mr-2"
                               />
                               {gender}
                            </label>
@@ -122,7 +112,7 @@ export default function MemberForm({
                   </div>
                </fieldset>
 
-               <label>
+               <label className="grid gap-1 text-sm font-semibold text-slate-700">
                   Weight (kg)
                   <input
                      type="number"
@@ -130,11 +120,11 @@ export default function MemberForm({
                      onChange={(e) =>
                         setMemberWeight(Number(e.target.value) || 0)
                      }
-                     style={{ width: '100%', marginTop: 4 }}
+                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   />
                </label>
 
-               <label>
+               <label className="grid gap-1 text-sm font-semibold text-slate-700">
                   Height (cm)
                   <input
                      type="number"
@@ -142,33 +132,43 @@ export default function MemberForm({
                      onChange={(e) =>
                         setMemberHeight(Number(e.target.value) || 0)
                      }
-                     style={{ width: '100%', marginTop: 4 }}
+                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   />
                </label>
 
-               <label>
+               <label className="grid gap-1 text-sm font-semibold text-slate-700">
                   Profile Picture (optional)
                   <input
                      type="file"
                      accept="image/*"
                      onChange={(e) => onImageUpload(e.target.files?.[0])}
-                     style={{ width: '100%', marginTop: 4 }}
+                     className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                   />
                </label>
+
+               {profileImage ? (
+                  <div className="mt-1 flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                     <img
+                        src={profileImage}
+                        alt="Selected profile preview"
+                        className="h-16 w-16 rounded-full border border-slate-200 object-cover"
+                     />
+                     <div className="text-sm text-slate-600">Preview</div>
+                  </div>
+               ) : null}
             </div>
 
-            <div
-               style={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  gap: 10,
-                  marginTop: 20,
-               }}
-            >
-               <button onClick={onClose}>Cancel</button>
+            <div className="mt-5 flex justify-end gap-3">
+               <button
+                  onClick={onClose}
+                  className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 cursor-pointer"
+               >
+                  Cancel
+               </button>
                <button
                   onClick={onSubmit}
                   disabled={!memberName.trim() || !memberDob}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                >
                   {submitLabel}
                </button>

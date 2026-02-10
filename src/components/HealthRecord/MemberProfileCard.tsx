@@ -20,89 +20,56 @@ export default function MemberProfileCard({
    const stage = getLifeStage(age);
 
    return (
-      <div
-         style={{
-            display: 'flex',
-            gap: 16,
-            alignItems: 'center',
-            border: '1px solid #ddd',
-            padding: 16,
-            borderRadius: 12,
-            maxWidth: 720,
-         }}
-      >
-         {member.profileImage ? (
-            <img
-               src={member.profileImage}
-               alt={`${member.name} profile`}
-               style={{
-                  width: 88,
-                  height: 88,
-                  borderRadius: '50%',
-                  objectFit: 'cover',
-                  border: '1px solid #ddd',
-               }}
-            />
-         ) : (
-            <div
-               style={{
-                  width: 88,
-                  height: 88,
-                  borderRadius: '50%',
-                  backgroundColor: '#f0f0f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 32,
-                  fontWeight: 600,
-                  color: '#555',
-               }}
-               aria-label={`${member.name} avatar`}
-            >
-               {member.name.charAt(0).toUpperCase()}
-            </div>
-         )}
-
-         <div style={{ flex: 1 }}>
-            <div
-               style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-               }}
-            >
-               <h4 style={{ margin: 0 }}>{member.name}</h4>
-               <span
-                  style={{
-                     backgroundColor: '#eef6ff',
-                     color: '#1d4ed8',
-                     padding: '2px 10px',
-                     borderRadius: 999,
-                     fontSize: 12,
-                     fontWeight: 600,
-                  }}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 mt-3 text-center shadow-sm">
+         <div className="flex justify-center">
+            {member.profileImage ? (
+               <img
+                  src={member.profileImage}
+                  alt={`${member.name} profile`}
+                  className="h-24 w-24 rounded-full border border-slate-200 object-cover"
+               />
+            ) : (
+               <div
+                  className="flex h-24 w-24 items-center justify-center rounded-full bg-slate-100 text-3xl font-semibold text-slate-600"
+                  aria-label={`${member.name} avatar`}
                >
+                  {member.name.charAt(0).toUpperCase()}
+               </div>
+            )}
+         </div>
+
+         <div className="mt-4 flex flex-col items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+               <h4 className="text-lg font-semibold text-slate-900">
+                  {member.name}
+               </h4>
+               <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                   {stage}
                </span>
             </div>
 
-            <p style={{ margin: '8px 0 0' }}>
+            <p className="text-sm text-slate-700">
                Age: {age ?? '-'} | Gender: {member.gender}
             </p>
 
-            <p style={{ margin: '4px 0 0' }}>
+            <p className="text-sm text-slate-700">
                DOB: {formatDate(member.dateOfBirth)}
             </p>
 
-            <p style={{ margin: '4px 0 0' }}>
+            <p className="text-sm text-slate-700">
                Weight: {member.weightKg} kg | Height: {member.heightCm} cm
             </p>
 
-            <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-               <button onClick={onEditProfile}>Edit Profile</button>
+            <div className="mt-2 flex flex-wrap justify-center gap-2">
+               <button
+                  onClick={onEditProfile}
+                  className="rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 cursor-pointer"
+               >
+                  Edit Profile
+               </button>
                <button
                   onClick={onDeleteProfile}
-                  style={{ backgroundColor: '#fee2e2', borderColor: '#fecaca' }}
+                  className="rounded-lg border border-red-200 bg-red-100 px-3 py-2 text-sm font-semibold text-red-700 cursor-pointer"
                >
                   Delete Profile
                </button>
