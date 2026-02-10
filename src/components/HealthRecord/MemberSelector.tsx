@@ -12,29 +12,15 @@ export default function MemberSelector({
    onSelectMember,
 }: MemberSelectorProps) {
    return (
-      <div
-         style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 12,
-            marginTop: 16,
-         }}
-      >
+      <div className="mt-4 flex flex-wrap gap-3">
          {members.length === 0 ? (
-            <p>No family members yet.</p>
+            <p className="text-sm text-slate-500">No family members yet.</p>
          ) : (
             members.map((member) => (
                <button
                   key={member.id}
                   onClick={() => onSelectMember(member.id)}
-                  style={{
-                     border: '1px solid #ccc',
-                     padding: '8px 12px',
-                     borderRadius: 16,
-                     cursor: 'pointer',
-                     backgroundColor:
-                        member.id === selectedMemberId ? '#e6f0ff' : '#fff',
-                  }}
+                  className={`rounded-full border px-3 py-1 text-sm font-semibold ${member.id === selectedMemberId ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-300 bg-white text-slate-700'}`}
                >
                   {member.name}
                </button>
