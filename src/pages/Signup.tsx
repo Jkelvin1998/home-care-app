@@ -33,8 +33,7 @@ export default function Signup() {
                               Daily tracking
                            </p>
                            <p className="mt-1">
-                              Long temperature, oxygen, pulse rate, and
-                              symptoms.
+                              Log temperature, oxygen, pulse rate, and symptoms.
                            </p>
                         </div>
 
@@ -58,7 +57,10 @@ export default function Signup() {
                         </p>
                      </div>
 
-                     <form className="mt-6 space-y-4">
+                     <form
+                        className="mt-6 space-y-4"
+                        onSubmit={(e) => e.preventDefault()}
+                     >
                         <label className="grid gap-2 text-sm font-medium text-slate-200">
                            Full Name:
                            <input

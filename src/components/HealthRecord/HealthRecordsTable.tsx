@@ -53,7 +53,7 @@ export default function HealthRecordsTable({
             {selectedRecords.length === 0 ? (
                <tr>
                   <td
-                     colSpan={10}
+                     colSpan={9}
                      className="border border-slate-200 px-3 py-6 text-center text-sm text-slate-500"
                   >
                      No health records yet
