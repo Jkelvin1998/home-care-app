@@ -1,6 +1,34 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
+   const navigate = useNavigate();
+   const { login } = useAuth();
+
+   const [email, setEmail] = useState('');
+   const [password, setPassword] = useState('');
+   const [error, setError] = useState('');
+   const [isSubmitting, setIsSubmitting] = useState(false);
+
+   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      setError('');
+      setIsSubmitting(true);
+
+      try {
+         await login({ email, password });
+         navigate('/', { replace: true });
+      } catch (err) {
+         setError(err instanceof Error ? err.message : 'Unable to login');
+      } finally {
+         setIsSubmitting(false);
+      }
+   };
+
+   // console.log('API_BASE', import.meta.env.VITE_API_BASE_URL);
+
    return (
       <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
          <div className="pointer-events-none absolute -top-20 left-12 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl animate-pulse" />
@@ -24,28 +52,6 @@ export default function Login() {
                            metrics, and stay on the top of daily care.
                         </p>
                      </div>
-
-                     <div className="flex flex-col gap-3 text-sm text-slate-200">
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                           <p className="font-semibold text-white">
-                              Quick access
-                           </p>
-                           <p className="mt-1 text-sm text-slate-200">
-                              See the latest health entries and alerts at a
-                              glance.
-                           </p>
-                        </div>
-
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                           <p className="font-semibold text-white">
-                              Secure storage
-                           </p>
-                           <p className="mt-1 text-sm text-slate-200">
-                              Keep health history organized for every family
-                              member.
-                           </p>
-                        </div>
-                     </div>
                   </div>
 
                   <div className="rounded-3xl border border-white/10 bg-white/10 p-8 shadow-xl">
@@ -56,14 +62,13 @@ export default function Login() {
                         </p>
                      </div>
 
-                     <form
-                        className="mt-6 space-y-4"
-                        onSubmit={(e) => e.preventDefault()}
-                     >
+                     <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                         <label className="grid gap-2 text-sm font-medium text-slate-200">
                            Email Address:
                            <input
                               type="email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
                               placeholder="you@example.com"
                               className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-300 focus:border-blue-400 focus:outline-none"
                            />
@@ -73,12 +78,14 @@ export default function Login() {
                            Password:
                            <input
                               type="password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
                               placeholder="••••••••"
                               className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-300 focus:border-blue-400 focus:outline-none"
                            />
                         </label>
 
-                        <div className="flex items-center justify-between text-xs text-slate-300">
+                        {/* <div className="flex items-center justify-between text-xs text-slate-300">
                            <label className="flex items-center gap-2">
                               <input
                                  type="checkbox"
@@ -92,13 +99,18 @@ export default function Login() {
                            >
                               Forgot password?
                            </button>
-                        </div>
+                        </div> */}
+
+                        {error && (
+                           <p className="text-sm text-rose-200">{error}</p>
+                        )}
 
                         <button
                            type="submit"
-                           className="mt-2 w-full rounded-xl bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:bg-blue-400 cursor-pointer"
+                           disabled={isSubmitting}
+                           className="mt-2 w-full rounded-xl bg-blue-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:bg-blue-400 disabled:opacity-60 cursor-pointer"
                         >
-                           Sign in
+                           {isSubmitting ? 'Signing in...' : 'Sign in'}
                         </button>
                      </form>
 

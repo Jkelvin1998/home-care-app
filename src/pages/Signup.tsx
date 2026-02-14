@@ -1,6 +1,44 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Signup() {
+   const navigate = useNavigate();
+   const { signup } = useAuth();
+
+   const [name, setName] = useState('');
+   const [email, setEmail] = useState('');
+   const [password, setPassword] = useState('');
+   const [confirmPassword, setConfirmPassword] = useState('');
+   const [error, setError] = useState('');
+   const [isSubmitting, setIsSubmitting] = useState(false);
+
+   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setError('');
+
+      if (password !== confirmPassword) {
+         setError('Password do not match');
+         return;
+      }
+
+      if (password.length < 8) {
+         setError('Password must be at least 8 characters');
+         return;
+      }
+
+      setIsSubmitting(true);
+
+      try {
+         await signup({ name: name.trim(), email: email.trim(), password });
+         navigate('/', { replace: true });
+      } catch (err) {
+         setError(err instanceof Error ? err.message : 'Unable to signup');
+      } finally {
+         setIsSubmitting(false);
+      }
+   };
+
    return (
       <div className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
          <div className="pointer-events-none absolute -top-20 left-12 h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl animate-pulse" />
@@ -17,36 +55,6 @@ export default function Signup() {
                         Build a secure home-care workspace for the entire
                         family.
                      </p>
-
-                     <div className="mt-6 space-y-4 text-sm text-slate-200">
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                           <p className="font-semibold text-white">
-                              Personalized profiles
-                           </p>
-                           <p className="mt-1">
-                              Store age-aware health metrics with ease.
-                           </p>
-                        </div>
-
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                           <p className="font-semibold text-white">
-                              Daily tracking
-                           </p>
-                           <p className="mt-1">
-                              Log temperature, oxygen, pulse rate, and symptoms.
-                           </p>
-                        </div>
-
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                           <p className="font-semibold text-white">
-                              Smart insights
-                           </p>
-                           <p className="mt-1">
-                              Keep a quick view of what's normal for each age
-                              group.
-                           </p>
-                        </div>
-                     </div>
                   </div>
 
                   <div className="rounded-3xl border border-white/10 bg-white/10 p-8 shadow-xl">
@@ -57,14 +65,13 @@ export default function Signup() {
                         </p>
                      </div>
 
-                     <form
-                        className="mt-6 space-y-4"
-                        onSubmit={(e) => e.preventDefault()}
-                     >
+                     <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                         <label className="grid gap-2 text-sm font-medium text-slate-200">
                            Full Name:
                            <input
                               type="text"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
                               placeholder="Alex Johnson"
                               className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-300 focus:border-emerald-400 focus:outline-none"
                            />
@@ -74,6 +81,8 @@ export default function Signup() {
                            Email Address:
                            <input
                               type="email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
                               placeholder="you@example.com"
                               className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-300 focus:border-emerald-400 focus:outline-none"
                            />
@@ -83,6 +92,8 @@ export default function Signup() {
                            Create Password:
                            <input
                               type="password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
                               placeholder="Minimum 8 characters"
                               className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-300 focus:border-emerald-400 focus:outline-none"
                            />
@@ -92,16 +103,27 @@ export default function Signup() {
                            Confirm Password:
                            <input
                               type="password"
+                              value={confirmPassword}
+                              onChange={(e) =>
+                                 setConfirmPassword(e.target.value)
+                              }
                               placeholder="Re-enter password"
                               className="rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-slate-300 focus:border-emerald-400 focus:outline-none"
                            />
                         </label>
 
+                        {error && (
+                           <p className="text-sm text-rose-200">{error}</p>
+                        )}
+
                         <button
                            type="submit"
-                           className="mt-2 w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 cursor-pointer"
+                           disabled={isSubmitting}
+                           className="mt-2 w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-400 disabled:opacity-60 cursor-pointer"
                         >
-                           Create account
+                           {isSubmitting
+                              ? 'Creating account...'
+                              : 'Create Account'}
                         </button>
                      </form>
 

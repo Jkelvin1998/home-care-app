@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react';
-import { v4 as uuid } from 'uuid';
+import { useEffect, useMemo, useState } from 'react';
 
-import useLocalStorage from '../hooks/useLocalStorage';
+import { apiRequest } from '../lib/api';
 
 import type { FamilyMember, Health } from '../types/health';
 
@@ -12,11 +11,10 @@ import MemberProfileCard from '../components/HealthRecord/MemberProfileCard';
 import MemberSelector from '../components/HealthRecord/MemberSelector';
 
 export default function HealthRecord() {
-   const [records, setRecords] = useLocalStorage<Health[]>('healthRecords', []);
-   const [members, setMembers] = useLocalStorage<FamilyMember[]>(
-      'familyMembers',
-      [],
-   );
+   const [records, setRecords] = useState<Health[]>([]);
+   const [members, setMembers] = useState<FamilyMember[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [error, setError] = useState('');
 
    const [temperature, setTemperature] = useState<number>(36.5);
    const [oxygen, setOxygen] = useState<number>(95);
@@ -37,6 +35,37 @@ export default function HealthRecord() {
    const memberMap = useMemo(() => {
       return new Map(members.map((m) => [m.id, m]));
    }, [members]);
+
+   useEffect(() => {
+      const load = async () => {
+         setLoading(true);
+         setError('');
+
+         try {
+            const [membersData, recordsData] = await Promise.all([
+               apiRequest<FamilyMember[]>('/members', { auth: true }),
+               apiRequest<Health[]>('/records', { auth: true }),
+            ]);
+
+            setMembers(membersData);
+            setRecords(recordsData);
+
+            if (membersData.length > 0) {
+               setSelectedMemberId((prev) => prev || membersData[0].id);
+            }
+         } catch (err) {
+            setError(
+               err instanceof Error
+                  ? err.message
+                  : 'Failed to load health data',
+            );
+         } finally {
+            setLoading(false);
+         }
+      };
+
+      load();
+   }, []);
 
    const resetMemberForm = () => {
       setMemberName('');
@@ -75,56 +104,78 @@ export default function HealthRecord() {
       resetMemberForm();
    };
 
-   const saveMember = () => {
+   const saveMember = async () => {
       if (!memberName.trim() || !memberDob) return;
+      setError('');
 
-      if (editingMemberId) {
-         setMembers((prev) =>
-            prev.map((member) =>
-               member.id === editingMemberId
-                  ? {
-                       ...member,
-                       name: memberName.trim(),
-                       dateOfBirth: memberDob,
-                       gender: memberGender,
-                       weightKg: memberWeight,
-                       heightCm: memberHeight,
-                       profileImage: memberProfileImage || undefined,
-                    }
-                  : member,
-            ),
-         );
-      } else {
-         const newMember: FamilyMember = {
-            id: uuid(),
-            name: memberName.trim(),
-            dateOfBirth: memberDob,
-            gender: memberGender,
-            weightKg: memberWeight,
-            heightCm: memberHeight,
-            profileImage: memberProfileImage || undefined,
-         };
-         setMembers((prev) => [...prev, newMember]);
-         setSelectedMemberId(newMember.id);
+      try {
+         if (editingMemberId) {
+            const updated = await apiRequest<FamilyMember>(
+               `/members/${editingMemberId}`,
+               {
+                  method: 'PUT',
+                  auth: true,
+                  body: JSON.stringify({
+                     name: memberName.trim(),
+                     dateOfBirth: memberDob,
+                     gender: memberGender,
+                     weightKg: memberWeight,
+                     heightCm: memberHeight,
+                     profileImage: memberProfileImage || undefined,
+                  }),
+               },
+            );
+            setMembers((prev) =>
+               prev.map((m) => (m.id === editingMemberId ? updated : m)),
+            );
+         } else {
+            const created = await apiRequest<FamilyMember>('/members', {
+               method: 'POST',
+               auth: true,
+               body: JSON.stringify({
+                  name: memberName.trim(),
+                  dateOfBirth: memberDob,
+                  gender: memberGender,
+                  weightKg: memberWeight,
+                  heightCm: memberHeight,
+                  profileImage: memberProfileImage || undefined,
+               }),
+            });
+            setMembers((prev) => [...prev, created]);
+            setSelectedMemberId(created.id);
+         }
+         closeMemberForm();
+      } catch (err) {
+         setError(err instanceof Error ? err.message : 'Unable to save member');
       }
-
-      closeMemberForm();
    };
 
-   const deleteSelectedMember = () => {
+   const deleteSelectedMember = async () => {
       if (!selectedMemberId) return;
 
-      setMembers((prev) =>
-         prev.filter((member) => member.id !== selectedMemberId),
-      );
-      setRecords((prev) =>
-         prev.filter((record) => record.memberId !== selectedMemberId),
-      );
-      setSelectedMemberId('');
-      setEditingRecordId(null);
+      try {
+         await apiRequest<void>(`/members/${selectedMemberId}`, {
+            method: 'DELETE',
+            auth: true,
+         });
+
+         setMembers((prev) =>
+            prev.filter((member) => member.id !== selectedMemberId),
+         );
+         setRecords((prev) =>
+            prev.filter((record) => record.memberId !== selectedMemberId),
+         );
+
+         setSelectedMemberId('');
+         setEditingRecordId(null);
+      } catch (err) {
+         setError(
+            err instanceof Error ? err.message : 'Unable to delete member',
+         );
+      }
    };
 
-   const saveRecord = () => {
+   const saveRecord = async () => {
       if (!selectedMemberId) return;
 
       const symptoms = symptomsInput
@@ -132,37 +183,47 @@ export default function HealthRecord() {
          .map((s) => s.trim())
          .filter(Boolean);
 
-      if (editingRecordId) {
-         setRecords((prev) =>
-            prev.map((record) =>
-               record.id === editingRecordId
-                  ? {
-                       ...record,
-                       temperature,
-                       oxygen,
-                       pulseRate,
-                       symptoms,
-                    }
-                  : record,
-            ),
-         );
-         setEditingMemberId(null);
-      } else {
-         setRecords((prev) => [
-            ...prev,
-            {
-               id: uuid(),
-               memberId: selectedMemberId,
-               savedAt: new Date().toISOString(),
-               temperature,
-               oxygen,
-               pulseRate,
-               symptoms,
-            },
-         ]);
-      }
+      try {
+         if (editingRecordId) {
+            const updated = await apiRequest<Health>(
+               `/records/${editingRecordId}`,
+               {
+                  method: 'PUT',
+                  auth: true,
+                  body: JSON.stringify({
+                     temperature,
+                     oxygen,
+                     pulseRate,
+                     symptoms,
+                  }),
+               },
+            );
 
-      setSymptomsInput('');
+            setRecords((prev) =>
+               prev.map((r) => (r.id === editingRecordId ? updated : r)),
+            );
+            setEditingRecordId(null);
+         } else {
+            const created = await apiRequest<Health>('/records', {
+               method: 'POST',
+               auth: true,
+               body: JSON.stringify({
+                  memberId: selectedMemberId,
+                  savedAt: new Date().toISOString(),
+                  temperature,
+                  oxygen,
+                  pulseRate,
+                  symptoms,
+               }),
+            });
+
+            setRecords((prev) => [created, ...prev]);
+         }
+
+         setSymptomsInput('');
+      } catch (err) {
+         setError(err instanceof Error ? err.message : 'Unable to save record');
+      }
    };
 
    const editRecord = (recordId: string) => {
@@ -177,12 +238,23 @@ export default function HealthRecord() {
       setSymptomsInput(selectedRecord.symptoms?.join(', ') ?? '');
    };
 
-   const deleteRecord = (recordId: string) => {
-      setRecords((prev) => prev.filter((record) => record.id !== recordId));
+   const deleteRecord = async (recordId: string) => {
+      try {
+         await apiRequest<void>(`/records/${recordId}`, {
+            method: 'DELETE',
+            auth: true,
+         });
 
-      if (editingRecordId === recordId) {
-         setEditingRecordId(null);
-         setSymptomsInput('');
+         setRecords((prev) => prev.filter((r) => r.id !== recordId));
+
+         if (editingRecordId === recordId) {
+            setEditingRecordId(null);
+            setSymptomsInput('');
+         }
+      } catch (err) {
+         setError(
+            err instanceof Error ? err.message : 'Unable to delete record',
+         );
       }
    };
 
@@ -195,11 +267,25 @@ export default function HealthRecord() {
       ? memberMap.get(selectedMemberId)
       : undefined;
 
+   if (loading) {
+      return (
+         <div className="p-6 text-sm text-slate-600">
+            Loading health records...
+         </div>
+      );
+   }
+
    return (
       <div className="mx-auto max-w-5xl p-6">
          <h2 className="text-2xl font-semibold text-slate-900">
             Health Records
          </h2>
+
+         {error && (
+            <p className="mt-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
+               {error}
+            </p>
+         )}
 
          <section className="mt-6">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
