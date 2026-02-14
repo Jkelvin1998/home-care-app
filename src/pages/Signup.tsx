@@ -30,7 +30,7 @@ export default function Signup() {
       setIsSubmitting(true);
 
       try {
-         await signup({ name, email, password });
+         await signup({ name: name.trim(), email: email.trim(), password });
          navigate('/', { replace: true });
       } catch (err) {
          setError(err instanceof Error ? err.message : 'Unable to signup');

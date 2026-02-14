@@ -106,6 +106,7 @@ export default function HealthRecord() {
 
    const saveMember = async () => {
       if (!memberName.trim() || !memberDob) return;
+      setError('');
 
       try {
          if (editingMemberId) {
@@ -148,8 +149,6 @@ export default function HealthRecord() {
          setError(err instanceof Error ? err.message : 'Unable to save member');
       }
    };
-
-   // Next
 
    const deleteSelectedMember = async () => {
       if (!selectedMemberId) return;
@@ -271,7 +270,7 @@ export default function HealthRecord() {
    if (loading) {
       return (
          <div className="p-6 text-sm text-slate-600">
-            Loading health records....
+            Loading health records...
          </div>
       );
    }
