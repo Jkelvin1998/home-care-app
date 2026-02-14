@@ -100,11 +100,11 @@ export const getTemperatureStatusInfo = (temperature: number): StatusInfo => {
 
    if (temperature <= 38.5)
       return {
-         label: 'Fever (35-35.9°C)',
+         label: 'Fever (37.6-38.5°C)',
          level: 'warning',
       };
 
-   return { label: 'High Fever (>38.5°C', level: 'critical' };
+   return { label: 'High Fever (>38.5°C)', level: 'critical' };
 };
 
 export const getStatusBadgeClass = (level: StatusLevel) => {
