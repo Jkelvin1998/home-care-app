@@ -25,7 +25,14 @@ export async function createMember(req, res) {
    const { name, dateOfBirth, gender, weightKg, heightCm, profileImage } =
       req.body;
 
-   if (!name || !dateOfBirth || !gender) {
+   if (
+      !name ||
+      !dateOfBirth ||
+      !gender ||
+      !weightKg ||
+      !heightCm ||
+      !profileImage
+   ) {
       return res
          .status(400)
          .json({ message: 'Missing required member fields' });
@@ -46,17 +53,35 @@ export async function createMember(req, res) {
 
 export async function updateMember(req, res) {
    const { id } = req.params;
+   const allowedFields = [
+      'name',
+      'dateOfBirth',
+      'gender',
+      'weightKg',
+      'heightCm',
+      'profileImage',
+   ];
+   const updatePayload = Object.fromEntries(
+      Object.entries(req.body).filter(([key]) => allowedFields.includes(key)),
+   );
+
+   if (Object.keys(updatePayload).length === 0) {
+      return res
+         .status(400)
+         .json({ message: 'No valid fields provided for update' });
+   }
+
    const updated = await FamilyMember.findOneAndUpdate(
       {
          _id: id,
          userId: req.user.id,
       },
-      req.body,
+      updatePayload,
       { new: true },
    );
 
    if (!updated) {
-      return res.status(404).json({ message: 'Member not found' });
+      return res.status(404).json({ message: 'Record not found' });
    }
 
    return res.json(normalize(updated));

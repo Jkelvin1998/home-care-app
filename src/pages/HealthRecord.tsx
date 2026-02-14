@@ -246,6 +246,8 @@ export default function HealthRecord() {
             auth: true,
          });
 
+         setRecords((prev) => prev.filter((r) => r.id !== recordId));
+
          if (editingRecordId === recordId) {
             setEditingRecordId(null);
             setSymptomsInput('');

@@ -2,10 +2,16 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+   throw new Error('JWT_SECRET environment variable is required');
+}
+
 function signToken(user) {
    return jwt.sign(
       { sub: user._id.toString(), email: user.email },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       {
          expiresIn: '7d',
       },

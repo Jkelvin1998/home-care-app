@@ -10,7 +10,7 @@ const healthRecordSchema = new mongoose.Schema(
       },
       memberId: {
          type: mongoose.Schema.Types.ObjectId,
-         ref: ' FamilyMember',
+         ref: 'FamilyMember',
          required: true,
          index: true,
       },

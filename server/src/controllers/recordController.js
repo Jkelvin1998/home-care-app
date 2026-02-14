@@ -45,12 +45,13 @@ export async function createRecord(req, res) {
 
 export async function updateRecord(req, res) {
    const { id } = req.params;
+   const { temperature, oxygen, pulseRate, symptoms } = req.body;
    const updated = await HealthRecord.findOneAndUpdate(
       {
          _id: id,
          userId: req.user.id,
       },
-      req.body,
+      { temperature, oxygen, pulseRate, symptoms },
       { new: true },
    );
 
