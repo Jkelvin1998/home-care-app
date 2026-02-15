@@ -10,6 +10,13 @@ import MemberForm from '../components/HealthRecord/MemberForm';
 import MemberProfileCard from '../components/HealthRecord/MemberProfileCard';
 import MemberSelector from '../components/HealthRecord/MemberSelector';
 
+import {
+   getAge,
+   getOxygenStatusInfo,
+   getPulseStatusInfo,
+   getTemperatureStatusInfo,
+} from '../utils/utils';
+
 export default function HealthRecord() {
    const [records, setRecords] = useState<Health[]>([]);
    const [members, setMembers] = useState<FamilyMember[]>([]);
@@ -19,7 +26,7 @@ export default function HealthRecord() {
    const [temperature, setTemperature] = useState<number>(36.5);
    const [oxygen, setOxygen] = useState<number>(95);
    const [pulseRate, setPulseRate] = useState<number>(50);
-   const [symptomsInput, setSymptomsInput] = useState('');
+   const [additionalSymptomsInput, setAdditionalSymptomsInput] = useState('');
    const [selectedMemberId, setSelectedMemberId] = useState<string>('');
    const [isMemberFormOpen, setIsMemberFormOpen] = useState(false);
    const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
@@ -31,6 +38,49 @@ export default function HealthRecord() {
    const [memberWeight, setMemberWeight] = useState<number>(60);
    const [memberHeight, setMemberHeight] = useState<number>(165);
    const [memberProfileImage, setMemberProfileImage] = useState('');
+
+   const parseSymptoms = (value: string) =>
+      value
+         .split(',')
+         .map((s) => s.trim())
+         .filter(Boolean);
+
+   const dedupeSymptoms = (symptoms: string[]) => Array.from(new Set(symptoms));
+
+   const getAutoDetectedSymptoms = (
+      currentTemperature: number,
+      currentOxygen: number,
+      currentPulseRate: number,
+      age: number | null,
+   ) => {
+      const detected: string[] = [];
+      const tempStatus = getTemperatureStatusInfo(currentTemperature);
+      const oxygenStatus = getOxygenStatusInfo(currentOxygen);
+      const pulseStatus = getPulseStatusInfo(age, currentPulseRate);
+
+      if (tempStatus.level !== 'normal') {
+         if (currentTemperature > 38.5) detected.push('High Fever');
+         else if (currentTemperature < 35)
+            detected.push('Critical Low Temperature');
+         else if (currentTemperature < 36)
+            detected.push('Low Body Temperature');
+         else detected.push('Fever');
+      }
+
+      if (oxygenStatus.level === 'warning')
+         detected.push('Low Oxygen Saturation');
+      if (oxygenStatus.level === 'critical')
+         detected.push('Critical Oxygen Level');
+
+      if (pulseStatus.level !== 'normal') {
+         if (pulseStatus.label.startsWith('High'))
+            detected.push('High Pulse Rate');
+         if (pulseStatus.label.startsWith('Low'))
+            detected.push('Low Pulse Rate');
+      }
+
+      return dedupeSymptoms(detected);
+   };
 
    const memberMap = useMemo(() => {
       return new Map(members.map((m) => [m.id, m]));
@@ -178,10 +228,17 @@ export default function HealthRecord() {
    const saveRecord = async () => {
       if (!selectedMemberId) return;
 
-      const symptoms = symptomsInput
-         .split(',')
-         .map((s) => s.trim())
-         .filter(Boolean);
+      const autoDetectedSymptoms = getAutoDetectedSymptoms(
+         temperature,
+         oxygen,
+         pulseRate,
+         selectedMemberAge,
+      );
+      const otherSymptoms = parseSymptoms(additionalSymptomsInput);
+      const symptoms = dedupeSymptoms([
+         ...autoDetectedSymptoms,
+         ...otherSymptoms,
+      ]);
 
       try {
          if (editingRecordId) {
@@ -220,7 +277,7 @@ export default function HealthRecord() {
             setRecords((prev) => [created, ...prev]);
          }
 
-         setSymptomsInput('');
+         setAdditionalSymptomsInput('');
       } catch (err) {
          setError(err instanceof Error ? err.message : 'Unable to save record');
       }
@@ -235,7 +292,22 @@ export default function HealthRecord() {
       setTemperature(selectedRecord.temperature);
       setOxygen(selectedRecord.oxygen);
       setPulseRate(selectedRecord.pulseRate);
-      setSymptomsInput(selectedRecord.symptoms?.join(', ') ?? '');
+
+      const memberAge = selectedMember
+         ? getAge(selectedMember.dateOfBirth)
+         : null;
+      const autoDetectedForRecord = getAutoDetectedSymptoms(
+         selectedRecord.temperature,
+         selectedRecord.oxygen,
+         selectedRecord.pulseRate,
+         memberAge,
+      );
+      const existingSymptoms = selectedRecord.symptoms ?? [];
+      const otherSymptoms = existingSymptoms.filter(
+         (symptom) => !autoDetectedForRecord.includes(symptom),
+      );
+
+      setAdditionalSymptomsInput(otherSymptoms.join(', '));
    };
 
    const deleteRecord = async (recordId: string) => {
@@ -249,7 +321,7 @@ export default function HealthRecord() {
 
          if (editingRecordId === recordId) {
             setEditingRecordId(null);
-            setSymptomsInput('');
+            setAdditionalSymptomsInput('');
          }
       } catch (err) {
          setError(
@@ -260,12 +332,41 @@ export default function HealthRecord() {
 
    const cancelRecordEdit = () => {
       setEditingRecordId(null);
-      setSymptomsInput('');
+      setAdditionalSymptomsInput('');
    };
 
    const selectedMember = selectedMemberId
       ? memberMap.get(selectedMemberId)
       : undefined;
+
+   const selectedMemberAge = selectedMember
+      ? getAge(selectedMember.dateOfBirth)
+      : null;
+
+   const autoDetectedSymptoms = getAutoDetectedSymptoms(
+      temperature,
+      oxygen,
+      pulseRate,
+      selectedMemberAge,
+   );
+
+   const metricAlerts = [
+      {
+         metric: 'Temperature' as const,
+         value: `${temperature.toFixed(1)}°C`,
+         status: getTemperatureStatusInfo(temperature),
+      },
+      {
+         metric: 'Oxygen' as const,
+         value: `${oxygen}%`,
+         status: getOxygenStatusInfo(oxygen),
+      },
+      {
+         metric: 'Pulse' as const,
+         value: `${pulseRate} bpm`,
+         status: getPulseStatusInfo(selectedMemberAge, pulseRate),
+      },
+   ];
 
    if (loading) {
       return (
@@ -350,13 +451,15 @@ export default function HealthRecord() {
                temperature={temperature}
                oxygen={oxygen}
                pulseRate={pulseRate}
-               symptomsInput={symptomsInput}
+               autoDetectedSymptoms={autoDetectedSymptoms}
+               additionalSymptomsInput={additionalSymptomsInput}
                selectedMemberId={selectedMemberId}
                isEditing={Boolean(editingRecordId)}
+               metricAlerts={metricAlerts}
                setTemperature={setTemperature}
                setOxygen={setOxygen}
                setPulseRate={setPulseRate}
-               setSymptomsInput={setSymptomsInput}
+               setAdditionalSymptomsInput={setAdditionalSymptomsInput}
                onSaveRecord={saveRecord}
                onCancelEdit={cancelRecordEdit}
             />
