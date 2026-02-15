@@ -4,8 +4,10 @@ import {
    formatTime,
    formatDate,
    getAge,
-   getOxygenStatus,
-   getPulseStatus,
+   getOxygenStatusInfo,
+   getPulseStatusInfo,
+   getStatusBadgeClass,
+   getTemperatureStatusInfo,
 } from '../../utils/utils';
 
 type HealthRecordsTableProps = {
@@ -36,6 +38,10 @@ export default function HealthRecordsTable({
                <th className="border border-slate-200 px-3 py-2">
                   Temperature
                </th>
+               <th className="border border-slate-200 px-3 py-2">
+                  Temperature Status
+               </th>
+
                <th className="border border-slate-200 px-3 py-2">Oxygen</th>
                <th className="border border-slate-200 px-3 py-2">Pulse</th>
                <th className="border border-slate-200 px-3 py-2">
@@ -53,7 +59,7 @@ export default function HealthRecordsTable({
             {selectedRecords.length === 0 ? (
                <tr>
                   <td
-                     colSpan={9}
+                     colSpan={10}
                      className="border border-slate-200 px-3 py-6 text-center text-sm text-slate-500"
                   >
                      No health records yet
@@ -63,6 +69,11 @@ export default function HealthRecordsTable({
                selectedRecords.map((record) => {
                   const member = memberMap.get(record.memberId);
                   const age = member ? getAge(member.dateOfBirth) : null;
+                  const temperatureStatus = getTemperatureStatusInfo(
+                     record.temperature,
+                  );
+                  const oxygenStatus = getOxygenStatusInfo(record.oxygen);
+                  const pulseStatus = getPulseStatusInfo(age, record.pulseRate);
 
                   return (
                      <tr key={record.id}>
@@ -76,17 +87,37 @@ export default function HealthRecordsTable({
                            {record.temperature}
                         </td>
                         <td className="border border-slate-200 px-3 py-2">
+                           <span
+                              className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${getStatusBadgeClass(temperatureStatus.level)}`}
+                           >
+                              {temperatureStatus.label}
+                           </span>
+                        </td>
+
+                        <td className="border border-slate-200 px-3 py-2">
                            {record.oxygen}
                         </td>
+
                         <td className="border border-slate-200 px-3 py-2">
                            {record.pulseRate}
                         </td>
+
                         <td className="border border-slate-200 px-3 py-2">
-                           {getOxygenStatus(record.oxygen)}
+                           <span
+                              className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${getStatusBadgeClass(oxygenStatus.level)}`}
+                           >
+                              {oxygenStatus.label}
+                           </span>
                         </td>
+
                         <td className="border border-slate-200 px-3 py-2">
-                           {getPulseStatus(age, record.pulseRate)}
+                           <span
+                              className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${getStatusBadgeClass(pulseStatus.level)}`}
+                           >
+                              {pulseStatus.label}
+                           </span>
                         </td>
+
                         <td className="border border-slate-200 px-3 py-2">
                            {record.symptoms?.join(', ') || '-'}
                         </td>

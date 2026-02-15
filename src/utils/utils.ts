@@ -46,16 +46,75 @@ export const getLifeStage = (age: number | null) => {
    return 'Senior';
 };
 
-export const getOxygenStatus = (oxygenValue: number) => {
-   if (oxygenValue >= 95) return 'Normal (≥95%)';
-   if (oxygenValue >= 90) return 'Low (90-94%)';
-   return 'Critical (<90%)';
+type StatusLevel = 'normal' | 'warning' | 'critical';
+
+type StatusInfo = {
+   label: string;
+   level: StatusLevel;
 };
 
-export const getPulseStatus = (age: number | null, pulse: number) => {
+export const getPulseStatusInfo = (
+   age: number | null,
+   pulse: number,
+): StatusInfo => {
    const range = getPulseRange(age);
 
-   if (pulse < range.min) return `Low (${range.min}-${range.max} bpm)`;
-   if (pulse > range.max) return `High (${range.min}-${range.max} bpm)`;
-   return `Normal (${range.min}-${range.max} bpm)`;
+   if (pulse < range.min) {
+      return { label: `Low (${range.min}-${range.max} bpm)`, level: 'warning' };
+   }
+
+   if (pulse > range.max) {
+      return {
+         label: `High (${range.min}-${range.max} bpm)`,
+         level: 'warning',
+      };
+   }
+
+   return { label: `Normal (${range.min}-${range.max} bpm)`, level: 'normal' };
+};
+
+export const getOxygenStatusInfo = (oxygenValue: number): StatusInfo => {
+   if (oxygenValue >= 95) return { label: 'Normal (≥95%)', level: 'normal' };
+   if (oxygenValue >= 90) return { label: 'Low (90-94%)', level: 'warning' };
+   return { label: 'Critical (<90%)', level: 'critical' };
+};
+
+export const getTemperatureStatusInfo = (temperature: number): StatusInfo => {
+   if (temperature < 35)
+      return {
+         label: 'Critical Low (<35°C)',
+         level: 'critical',
+      };
+
+   if (temperature < 36)
+      return {
+         label: 'Low (35-35.9°C)',
+         level: 'warning',
+      };
+
+   if (temperature <= 37.5)
+      return {
+         label: 'Normal (36-37.5°C)',
+         level: 'normal',
+      };
+
+   if (temperature <= 38.5)
+      return {
+         label: 'Fever (37.6-38.5°C)',
+         level: 'warning',
+      };
+
+   return { label: 'High Fever (>38.5°C)', level: 'critical' };
+};
+
+export const getStatusBadgeClass = (level: StatusLevel) => {
+   if (level === 'normal') {
+      return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+   }
+
+   if (level === 'warning') {
+      return 'bg-amber-100 text-amber-700 border-amber-200';
+   }
+
+   return 'bg-rose-100 text-rose-700 border-rose-200';
 };
