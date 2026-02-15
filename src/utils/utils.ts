@@ -46,9 +46,9 @@ export const getLifeStage = (age: number | null) => {
    return 'Senior';
 };
 
-type StatusLevel = 'normal' | 'warning' | 'critical';
+export type StatusLevel = 'normal' | 'warning' | 'critical';
 
-type StatusInfo = {
+export type StatusInfo = {
    label: string;
    level: StatusLevel;
 };
