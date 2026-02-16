@@ -9,6 +9,7 @@ import HealthRecordsTable from '../components/HealthRecord/HealthRecordsTable';
 import MemberForm from '../components/HealthRecord/MemberForm';
 import MemberProfileCard from '../components/HealthRecord/MemberProfileCard';
 import MemberSelector from '../components/HealthRecord/MemberSelector';
+import HealthTrendsChart from '../components/HealthRecord/HealthTrendsChart';
 
 import {
    getAge,
@@ -462,6 +463,20 @@ export default function HealthRecord() {
                setAdditionalSymptomsInput={setAdditionalSymptomsInput}
                onSaveRecord={saveRecord}
                onCancelEdit={cancelRecordEdit}
+            />
+         </section>
+
+         <section className="mt-6">
+            <h3 className="text-lg font-semibold text-slate-900">
+               Health Trends
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+               A line chart is best here because these vitals are time-based
+               data and trends over time are easier to spot.
+            </p>
+            <HealthTrendsChart
+               records={records}
+               selectedMemberId={selectedMemberId}
             />
          </section>
 
