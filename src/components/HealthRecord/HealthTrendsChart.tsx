@@ -70,7 +70,7 @@ export default function HealthTrendsChart({
    }
 
    const xLabels = createUniqueTimeLabels(memberRecords);
-   const latestDate = `${formatDate(memberRecords[memberRecords.length - 1].savedAt)} ${formatTime(memberRecords[memberRecords.length - 1].savedAt)}`;
+   const latestDate = xLabels[xLabels.length - 1];
 
    return (
       <Stack spacing={2} sx={{ mt: 2 }}>
