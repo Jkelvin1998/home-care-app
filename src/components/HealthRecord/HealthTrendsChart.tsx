@@ -6,7 +6,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { LineChart } from '@mui/x-charts/LineChart';
 import type { Health } from '../../types/health';
-import { formatDate } from '../../utils/utils';
+import { formatDate, formatTime } from '../../utils/utils';
 
 type HealthTrendsChartProps = {
    records: Health[];
@@ -20,6 +20,19 @@ type MetricConfig = {
    label: string;
    color: string;
    unit: string;
+};
+
+const createUniqueTimeLabels = (records: Health[]) => {
+   const seenLabels = new Map<string, number>();
+
+   return records.map((record, index) => {
+      const baseLabel = `${formatDate(record.savedAt)} ${formatTime(record.savedAt)}`;
+      const seenCount = seenLabels.get(baseLabel) ?? 0;
+      seenLabels.set(baseLabel, seenCount + 1);
+
+      if (seenCount === 0) return baseLabel;
+      return `${baseLabel} #${index + 1}`;
+   });
 };
 
 const metrics: MetricConfig[] = [
@@ -56,8 +69,8 @@ export default function HealthTrendsChart({
       );
    }
 
-   const xLabels = memberRecords.map((record) => formatDate(record.savedAt));
-   const latestDate = xLabels[xLabels.length - 1];
+   const xLabels = createUniqueTimeLabels(memberRecords);
+   const latestDate = `${formatDate(memberRecords[memberRecords.length - 1].savedAt)} ${formatTime(memberRecords[memberRecords.length - 1].savedAt)}`;
 
    return (
       <Stack spacing={2} sx={{ mt: 2 }}>
