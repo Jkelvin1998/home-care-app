@@ -43,13 +43,7 @@ const metrics: MetricConfig[] = [
 
 const previewXAxis = ['Point 1', 'Point 2', 'Point 3', 'Point 4'];
 
-const getPreviewValues = (key: MetricKey) => {
-   if (key === 'temperature') return [36.4, 36.6, 36.5, 36.7];
-
-   if (key === 'oxygen') return [97, 98, 98, 97];
-
-   return [74, 76, 75, 77];
-};
+const getPreviewValues = (): Array<number | null> => [null, null, null, null];
 
 export default function HealthTrendsChart({
    records,
@@ -89,12 +83,16 @@ export default function HealthTrendsChart({
          )}
 
          {metrics.map((metric) => {
-            const values = hasRecords
+            const values: Array<number | null> = hasRecords
                ? memberRecords.map((record) => record[metric.key])
-               : getPreviewValues(metric.key);
-            const latestValue = values[values.length - 1];
-            const minValue = hasRecords ? Math.min(...values) : null;
-            const maxValue = hasRecords ? Math.max(...values) : null;
+               : getPreviewValues();
+            const latestValue = hasRecords ? values[values.length - 1] : null;
+            const minValue = hasRecords
+               ? Math.min(...(values as number[]))
+               : null;
+            const maxValue = hasRecords
+               ? Math.max(...(values as number[]))
+               : null;
 
             return (
                <Card
@@ -121,7 +119,7 @@ export default function HealthTrendsChart({
                            label={
                               hasRecords
                                  ? `Latest: ${latestValue}${metric.unit}`
-                                 : 'Preview'
+                                 : 'Preview (no data yet)'
                            }
                            sx={{
                               bgcolor: hasRecords ? `grey.100` : 'info.main',
