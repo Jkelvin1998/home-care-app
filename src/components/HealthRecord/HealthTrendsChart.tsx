@@ -41,6 +41,16 @@ const metrics: MetricConfig[] = [
    { key: 'pulseRate', label: 'Pulse Rate', color: '#9333ea', unit: 'bpm' },
 ];
 
+const previewXAxis = ['Point 1', 'Point 2', 'Point 3', 'Point 4'];
+
+const getPreviewValues = (key: MetricKey) => {
+   if (key === 'temperature') return [36.4, 36.6, 36.5, 36.7];
+
+   if (key === 'oxygen') return [97, 98, 98, 97];
+
+   return [74, 76, 75, 77];
+};
+
 export default function HealthTrendsChart({
    records,
    selectedMemberId,
@@ -52,33 +62,39 @@ export default function HealthTrendsChart({
             new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime(),
       );
 
-   if (!selectedMemberId) {
-      return (
-         <Typography sx={{ mt: 1.5, color: 'text.secondary', fontSize: 14 }}>
-            Select a family member to view health trends.
-         </Typography>
-      );
-   }
+   const hasSelectedMember = Boolean(selectedMemberId);
+   const hasRecords = memberRecords.length > 0;
 
-   if (memberRecords.length < 2) {
-      return (
-         <Typography sx={{ mt: 1.5, color: 'text.secondary', fontSize: 14 }}>
-            Add at least two records to visualize temperature, oxygen, and pulse
-            trends.
-         </Typography>
-      );
-   }
-
-   const xLabels = createUniqueTimeLabels(memberRecords);
-   const latestDate = xLabels[xLabels.length - 1];
+   const xLabels = hasRecords
+      ? createUniqueTimeLabels(memberRecords)
+      : previewXAxis;
+   const latestDate = hasRecords
+      ? xLabels[xLabels.length - 1]
+      : 'No records yet';
 
    return (
       <Stack spacing={2} sx={{ mt: 2 }}>
+         {!hasSelectedMember && (
+            <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>
+               Select a family member to view real trends. A preview is shown
+               below.
+            </Typography>
+         )}
+
+         {hasSelectedMember && !hasRecords && (
+            <Typography sx={{ color: 'text.secondary', fontSize: 14 }}>
+               No health records yet. Preview lines are displayed until your
+               first saved record.
+            </Typography>
+         )}
+
          {metrics.map((metric) => {
-            const values = memberRecords.map((record) => record[metric.key]);
+            const values = hasRecords
+               ? memberRecords.map((record) => record[metric.key])
+               : getPreviewValues(metric.key);
             const latestValue = values[values.length - 1];
-            const minValue = Math.min(...values);
-            const maxValue = Math.max(...values);
+            const minValue = hasRecords ? Math.min(...values) : null;
+            const maxValue = hasRecords ? Math.max(...values) : null;
 
             return (
                <Card
@@ -102,8 +118,18 @@ export default function HealthTrendsChart({
                         </Typography>
                         <Chip
                            size="small"
-                           label={`Latest: ${latestValue}${metric.unit}`}
-                           sx={{ bgcolor: `grey.100`, fontWeight: 600 }}
+                           label={
+                              hasRecords
+                                 ? `Latest: ${latestValue}${metric.unit}`
+                                 : 'Preview'
+                           }
+                           sx={{
+                              bgcolor: hasRecords ? `grey.100` : 'info.main',
+                              color: hasRecords
+                                 ? undefined
+                                 : 'info.contrastText',
+                              fontWeight: 600,
+                           }}
                         />
                      </Stack>
 
@@ -131,19 +157,31 @@ export default function HealthTrendsChart({
                      >
                         <Chip
                            size="small"
-                           label={`Min: ${minValue}${metric.unit}`}
+                           label={
+                              hasRecords
+                                 ? `Min: ${minValue}${metric.unit}`
+                                 : 'Min: --'
+                           }
                         />
                         <Chip
                            size="small"
-                           label={`Max: ${maxValue}${metric.unit}`}
+                           label={
+                              hasRecords
+                                 ? `Max: ${maxValue}${metric.unit}`
+                                 : 'Max: --'
+                           }
                         />
                         <Chip
                            size="small"
-                           label={`Records: ${values.length}`}
+                           label={`Records: ${memberRecords.length}`}
                         />
                         <Chip
                            size="small"
-                           label={`Latest date: ${latestDate}`}
+                           label={
+                              hasRecords
+                                 ? `Latest date: ${latestDate}`
+                                 : 'Latest date: --'
+                           }
                         />
                      </Box>
                   </CardContent>
