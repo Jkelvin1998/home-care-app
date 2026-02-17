@@ -125,6 +125,9 @@ export default function HealthTrendsChart({
                            }
                            sx={{
                               bgcolor: hasRecords ? `grey.100` : 'info.main',
+                              color: hasRecords
+                                 ? undefined
+                                 : 'info.contrastText',
                               fontWeight: 600,
                            }}
                         />
