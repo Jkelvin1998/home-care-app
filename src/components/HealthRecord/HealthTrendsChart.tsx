@@ -43,7 +43,7 @@ const metrics: MetricConfig[] = [
 
 const previewXAxis = ['Point 1', 'Point 2', 'Point 3', 'Point 4'];
 
-const getPreviewValues = (): Array<number | null> => [null, null, null, null];
+const PREVIEW_VALUES: Array<number | null> = [null, null, null, null];
 
 export default function HealthTrendsChart({
    records,
@@ -85,7 +85,7 @@ export default function HealthTrendsChart({
          {metrics.map((metric) => {
             const values: Array<number | null> = hasRecords
                ? memberRecords.map((record) => record[metric.key])
-               : getPreviewValues();
+               : [...PREVIEW_VALUES];
 
             const numericValues = values.filter(
                (value): value is number =>
@@ -126,7 +126,9 @@ export default function HealthTrendsChart({
                            size="small"
                            label={
                               hasRecords
-                                 ? `Latest: ${latestValue ?? '--'}${latestValue !== undefined ? metric.unit : ''}`
+                                 ? latestValue !== undefined
+                                    ? `Latest: ${latestValue}${metric.unit}`
+                                    : 'Latest: --'
                                  : 'Preview (no data yet)'
                            }
                            sx={{
