@@ -93,8 +93,8 @@ export default function HealthTrendsChart({
                ? memberRecords.map((record) => record[metric.key])
                : getPreviewValues(metric.key);
             const latestValue = values[values.length - 1];
-            const minValue = Math.min(...values);
-            const maxValue = Math.max(...values);
+            const minValue = hasRecords ? Math.min(...values) : null;
+            const maxValue = hasRecords ? Math.max(...values) : null;
 
             return (
                <Card
@@ -157,11 +157,19 @@ export default function HealthTrendsChart({
                      >
                         <Chip
                            size="small"
-                           label={`Min: ${minValue}${metric.unit}`}
+                           label={
+                              hasRecords
+                                 ? `Min: ${minValue}${metric.unit}`
+                                 : 'Min: --'
+                           }
                         />
                         <Chip
                            size="small"
-                           label={`Max: ${maxValue}${metric.unit}`}
+                           label={
+                              hasRecords
+                                 ? `Max: ${maxValue}${metric.unit}`
+                                 : 'Max: --'
+                           }
                         />
                         <Chip
                            size="small"
@@ -169,7 +177,11 @@ export default function HealthTrendsChart({
                         />
                         <Chip
                            size="small"
-                           label={`Latest date: ${latestDate}`}
+                           label={
+                              hasRecords
+                                 ? `Latest date: ${latestDate}`
+                                 : 'Latest date: --'
+                           }
                         />
                      </Box>
                   </CardContent>
