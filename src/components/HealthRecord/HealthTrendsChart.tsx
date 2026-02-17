@@ -86,13 +86,21 @@ export default function HealthTrendsChart({
             const values: Array<number | null> = hasRecords
                ? memberRecords.map((record) => record[metric.key])
                : getPreviewValues();
-            const latestValue = hasRecords ? values[values.length - 1] : null;
-            const minValue = hasRecords
-               ? Math.min(...(values as number[]))
-               : null;
-            const maxValue = hasRecords
-               ? Math.max(...(values as number[]))
-               : null;
+
+            const numericValues = values.filter(
+               (value): value is number =>
+                  value !== null && Number.isFinite(value),
+            );
+            const latestValue = [...values]
+               .reverse()
+               .find(
+                  (value): value is number =>
+                     value !== null && Number.isFinite(value),
+               );
+            const minValue =
+               numericValues.length > 0 ? Math.min(...numericValues) : null;
+            const maxValue =
+               numericValues.length > 0 ? Math.max(...numericValues) : null;
 
             return (
                <Card
@@ -118,7 +126,7 @@ export default function HealthTrendsChart({
                            size="small"
                            label={
                               hasRecords
-                                 ? `Latest: ${latestValue}${metric.unit}`
+                                 ? `Latest: ${latestValue ?? '--'}${latestValue !== undefined ? metric.unit : ''}`
                                  : 'Preview (no data yet)'
                            }
                            sx={{
@@ -156,7 +164,7 @@ export default function HealthTrendsChart({
                         <Chip
                            size="small"
                            label={
-                              hasRecords
+                              minValue !== null
                                  ? `Min: ${minValue}${metric.unit}`
                                  : 'Min: --'
                            }
@@ -164,7 +172,7 @@ export default function HealthTrendsChart({
                         <Chip
                            size="small"
                            label={
-                              hasRecords
+                              maxValue !== null
                                  ? `Max: ${maxValue}${metric.unit}`
                                  : 'Max: --'
                            }
