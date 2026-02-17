@@ -43,13 +43,7 @@ const metrics: MetricConfig[] = [
 
 const previewXAxis = ['Point 1', 'Point 2', 'Point 3', 'Point 4'];
 
-const getPreviewValues = (key: MetricKey) => {
-   if (key === 'temperature') return [36.4, 36.6, 36.5, 36.7];
-
-   if (key === 'oxygen') return [97, 98, 98, 97];
-
-   return [74, 76, 75, 77];
-};
+const PREVIEW_VALUES: Array<number | null> = [null, null, null, null];
 
 export default function HealthTrendsChart({
    records,
@@ -89,12 +83,24 @@ export default function HealthTrendsChart({
          )}
 
          {metrics.map((metric) => {
-            const values = hasRecords
+            const values: Array<number | null> = hasRecords
                ? memberRecords.map((record) => record[metric.key])
-               : getPreviewValues(metric.key);
-            const latestValue = values[values.length - 1];
-            const minValue = hasRecords ? Math.min(...values) : null;
-            const maxValue = hasRecords ? Math.max(...values) : null;
+               : [...PREVIEW_VALUES];
+
+            const numericValues = values.filter(
+               (value): value is number =>
+                  value !== null && Number.isFinite(value),
+            );
+            const latestValue = [...values]
+               .reverse()
+               .find(
+                  (value): value is number =>
+                     value !== null && Number.isFinite(value),
+               );
+            const minValue =
+               numericValues.length > 0 ? Math.min(...numericValues) : null;
+            const maxValue =
+               numericValues.length > 0 ? Math.max(...numericValues) : null;
 
             return (
                <Card
@@ -120,8 +126,10 @@ export default function HealthTrendsChart({
                            size="small"
                            label={
                               hasRecords
-                                 ? `Latest: ${latestValue}${metric.unit}`
-                                 : 'Preview'
+                                 ? latestValue !== undefined
+                                    ? `Latest: ${latestValue}${metric.unit}`
+                                    : 'Latest: --'
+                                 : 'Preview (no data yet)'
                            }
                            sx={{
                               bgcolor: hasRecords ? `grey.100` : 'info.main',
@@ -158,7 +166,7 @@ export default function HealthTrendsChart({
                         <Chip
                            size="small"
                            label={
-                              hasRecords
+                              minValue !== null
                                  ? `Min: ${minValue}${metric.unit}`
                                  : 'Min: --'
                            }
@@ -166,7 +174,7 @@ export default function HealthTrendsChart({
                         <Chip
                            size="small"
                            label={
-                              hasRecords
+                              maxValue !== null
                                  ? `Max: ${maxValue}${metric.unit}`
                                  : 'Max: --'
                            }
