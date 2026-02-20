@@ -118,3 +118,32 @@ export const getStatusBadgeClass = (level: StatusLevel) => {
 
    return 'bg-rose-100 text-rose-700 border-rose-200';
 };
+
+export const getStatusIndicatorClass = (
+   level: StatusLevel,
+   colorBlindMode: boolean,
+) => {
+   if (colorBlindMode) {
+      if (level === 'normal') {
+         return 'border-blue-700 bg-blue-200 text-blue-900';
+      }
+      if (level === 'warning') {
+         return 'border-orange-700 bg-orange-200 text-orange-900';
+      }
+      return 'border-fuchsia-700 bg-fuchsia-200 text-fuchsia-900';
+   }
+
+   if (level === 'normal') {
+      return 'border-emerald-700 bg-emerald-500 text-white';
+   }
+   if (level === 'warning') {
+      return 'border-amber-700 bg-amber-200 text-orange-900';
+   }
+   return 'border-rose-700 bg-rose-200 text-fuchsia-900';
+};
+
+export const getStatusIndicatorLabel = (level: StatusLevel) => {
+   if (level === 'normal') return 'N';
+   if (level === 'warning') return 'W';
+   return 'C';
+};

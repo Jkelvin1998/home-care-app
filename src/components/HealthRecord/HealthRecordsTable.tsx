@@ -6,29 +6,26 @@ import {
    getAge,
    getOxygenStatusInfo,
    getPulseStatusInfo,
-   getStatusBadgeClass,
+   getStatusIndicatorClass,
+   getStatusIndicatorLabel,
    getTemperatureStatusInfo,
 } from '../../utils/utils';
 
 type HealthRecordsTableProps = {
    records: Health[];
-   selectedMemberId: string;
    memberMap: Map<string, FamilyMember>;
    onEditRecord: (recordId: string) => void;
    onDeleteRecord: (recordId: string) => void;
+   colorBlindMode: boolean;
 };
 
 export default function HealthRecordsTable({
    records,
-   selectedMemberId,
    memberMap,
    onEditRecord,
    onDeleteRecord,
+   colorBlindMode,
 }: HealthRecordsTableProps) {
-   const selectedRecords = records.filter(
-      (record) => record.memberId === selectedMemberId,
-   );
-
    return (
       <table className="mt-4 w-full border-collapse text-sm">
          <thead>
@@ -38,35 +35,25 @@ export default function HealthRecordsTable({
                <th className="border border-slate-200 px-3 py-2">
                   Temperature
                </th>
-               <th className="border border-slate-200 px-3 py-2">
-                  Temperature Status
-               </th>
-
                <th className="border border-slate-200 px-3 py-2">Oxygen</th>
                <th className="border border-slate-200 px-3 py-2">Pulse</th>
-               <th className="border border-slate-200 px-3 py-2">
-                  Oxygen Status
-               </th>
-               <th className="border border-slate-200 px-3 py-2">
-                  Pulse Status
-               </th>
                <th className="border border-slate-200 px-3 py-2">Symptoms</th>
                <th className="border border-slate-200 px-3 py-2">Actions</th>
             </tr>
          </thead>
 
          <tbody>
-            {selectedRecords.length === 0 ? (
+            {records.length === 0 ? (
                <tr>
                   <td
-                     colSpan={10}
+                     colSpan={7}
                      className="border border-slate-200 px-3 py-6 text-center text-sm text-slate-500"
                   >
                      No health records yet
                   </td>
                </tr>
             ) : (
-               selectedRecords.map((record) => {
+               records.map((record) => {
                   const member = memberMap.get(record.memberId);
                   const age = member ? getAge(member.dateOfBirth) : null;
                   const temperatureStatus = getTemperatureStatusInfo(
@@ -84,38 +71,41 @@ export default function HealthRecordsTable({
                            {formatDate(record.savedAt)}
                         </td>
                         <td className="border border-slate-200 px-3 py-2">
-                           {record.temperature}
-                        </td>
-                        <td className="border border-slate-200 px-3 py-2">
-                           <span
-                              className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${getStatusBadgeClass(temperatureStatus.level)}`}
-                           >
-                              {temperatureStatus.label}
-                           </span>
-                        </td>
-
-                        <td className="border border-slate-200 px-3 py-2">
-                           {record.oxygen}
-                        </td>
-
-                        <td className="border border-slate-200 px-3 py-2">
-                           {record.pulseRate}
+                           <div className="flex items-center gap-2">
+                              <span
+                                 className={`inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold ${getStatusIndicatorClass(temperatureStatus.level, colorBlindMode)}`}
+                                 title={temperatureStatus.label}
+                              >
+                                 {getStatusIndicatorLabel(
+                                    temperatureStatus.level,
+                                 )}
+                              </span>
+                              <span>{record.temperature}</span>
+                           </div>
                         </td>
 
                         <td className="border border-slate-200 px-3 py-2">
-                           <span
-                              className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${getStatusBadgeClass(oxygenStatus.level)}`}
-                           >
-                              {oxygenStatus.label}
-                           </span>
+                           <div className="flex items-center gap-2">
+                              <span
+                                 className={`inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold ${getStatusIndicatorClass(oxygenStatus.level, colorBlindMode)}`}
+                                 title={oxygenStatus.label}
+                              >
+                                 {getStatusIndicatorLabel(oxygenStatus.level)}
+                              </span>
+                              <span>{record.oxygen}</span>
+                           </div>
                         </td>
 
                         <td className="border border-slate-200 px-3 py-2">
-                           <span
-                              className={`inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${getStatusBadgeClass(pulseStatus.level)}`}
-                           >
-                              {pulseStatus.label}
-                           </span>
+                           <div className="flex items-center gap-2">
+                              <span
+                                 className={`inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-bold ${getStatusIndicatorClass(pulseStatus.level, colorBlindMode)}`}
+                                 title={pulseStatus.label}
+                              >
+                                 {getStatusIndicatorLabel(pulseStatus.level)}
+                              </span>
+                              <span>{record.pulseRate}</span>
+                           </div>
                         </td>
 
                         <td className="border border-slate-200 px-3 py-2">

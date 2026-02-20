@@ -18,6 +18,8 @@ import {
    getTemperatureStatusInfo,
 } from '../utils/utils';
 
+type RecordSortKey = 'latest' | 'temperature' | 'oxygen' | 'pulse';
+
 export default function HealthRecord() {
    const [records, setRecords] = useState<Health[]>([]);
    const [members, setMembers] = useState<FamilyMember[]>([]);
@@ -39,6 +41,10 @@ export default function HealthRecord() {
    const [memberWeight, setMemberWeight] = useState<number>(60);
    const [memberHeight, setMemberHeight] = useState<number>(165);
    const [memberProfileImage, setMemberProfileImage] = useState('');
+   const [filterFromDate, setFilterFromDate] = useState('');
+   const [filterToDate, setFilterToDate] = useState('');
+   const [recordSortBy, setRecordSortBy] = useState<RecordSortKey>('latest');
+   const [colorBlindMode, setColorBlindMode] = useState(false);
 
    const parseSymptoms = (value: string) =>
       value
@@ -369,6 +375,40 @@ export default function HealthRecord() {
       },
    ];
 
+   const filteredAndSortedRecords = useMemo(() => {
+      const fromTimestamp = filterFromDate
+         ? new Date(`${filterFromDate}T00:00:00`).getTime()
+         : null;
+      const toTimestamp = filterToDate
+         ? new Date(`${filterToDate}T23:59:59.999`).getTime()
+         : null;
+
+      return records
+         .filter((record) => record.memberId === selectedMemberId)
+         .filter((record) => {
+            const recordTime = new Date(record.savedAt).getTime();
+
+            if (fromTimestamp !== null && recordTime < fromTimestamp)
+               return false;
+            if (toTimestamp !== null && recordTime > toTimestamp) return false;
+            return true;
+         })
+         .sort((a, b) => {
+            if (recordSortBy === 'latest') {
+               return (
+                  new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
+               );
+            }
+            if (recordSortBy === 'temperature') {
+               return b.temperature - a.temperature;
+            }
+            if (recordSortBy === 'oxygen') {
+               return b.oxygen - a.oxygen;
+            }
+            return b.pulseRate - a.pulseRate;
+         });
+   }, [records, selectedMemberId, filterFromDate, filterToDate, recordSortBy]);
+
    if (loading) {
       return (
          <div className="p-6 text-sm text-slate-600">
@@ -480,13 +520,80 @@ export default function HealthRecord() {
             />
          </section>
 
-         <HealthRecordsTable
-            records={records}
-            selectedMemberId={selectedMemberId}
-            memberMap={memberMap}
-            onEditRecord={editRecord}
-            onDeleteRecord={deleteRecord}
-         />
+         <div className="mt-6">
+            <h3 className="text-lg font-semibold text-slate-900">
+               Health Records History
+            </h3>
+            <div className="mt-3 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
+               <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                  From
+                  <input
+                     type="date"
+                     value={filterFromDate}
+                     onChange={(e) => setFilterFromDate(e.target.value)}
+                     className="rounded-lg border border-slate-300  bg-white px-3 py-2 text-sm"
+                  />
+               </label>
+               <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                  From
+                  <input
+                     type="date"
+                     value={filterToDate}
+                     onChange={(e) => setFilterToDate(e.target.value)}
+                     className="rounded-lg border border-slate-300  bg-white px-3 py-2 text-sm"
+                  />
+               </label>
+               <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                  Sort by
+                  <select
+                     value={recordSortBy}
+                     onChange={(e) =>
+                        setRecordSortBy(e.target.value as RecordSortKey)
+                     }
+                     className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                  >
+                     <option value="latest">Latest first</option>
+                     <option value="temperature">
+                        Temperature (high to low)
+                     </option>
+                     <option value="oxygen">Oxygen (high to low)</option>
+                     <option value="pulse">Pulse (high to low)</option>
+                  </select>
+               </label>
+
+               <div className="flex items-end">
+                  <button
+                     onClick={() => {
+                        setFilterFromDate('');
+                        setFilterToDate('');
+                        setRecordSortBy('latest');
+                     }}
+                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                  >
+                     Reset Filters
+                  </button>
+               </div>
+            </div>
+
+            <div className="mt-3 flex justify-end">
+               <button
+                  onClick={() => setColorBlindMode((prev) => !prev)}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+               >
+                  {colorBlindMode
+                     ? 'Color-blind mode: ON'
+                     : 'Color-blind mode: OFF'}
+               </button>
+            </div>
+
+            <HealthRecordsTable
+               records={filteredAndSortedRecords}
+               memberMap={memberMap}
+               onEditRecord={editRecord}
+               onDeleteRecord={deleteRecord}
+               colorBlindMode={colorBlindMode}
+            />
+         </div>
       </div>
    );
 }
