@@ -52,7 +52,7 @@ export async function updateRecord(req, res) {
          userId: req.user.id,
       },
       { temperature, oxygen, pulseRate, symptoms },
-      { new: true },
+      { returnDocument: 'after' },
    );
 
    if (!updated) {

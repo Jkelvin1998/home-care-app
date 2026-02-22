@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import doctorAnimation from '../assets/lottie/doctor-animation.json';
+import doctorAnimationUrl from '../assets/lottie/doctor-animation.json?url';
 
 import { apiRequest } from '../lib/api';
 
@@ -47,6 +47,7 @@ export default function HealthRecord() {
    const [filterToDate, setFilterToDate] = useState('');
    const [recordSortBy, setRecordSortBy] = useState<RecordSortKey>('latest');
    const [colorBlindMode, setColorBlindMode] = useState(false);
+   const modalRef = useRef<HTMLDivElement>(null);
 
    const parseSymptoms = (value: string) =>
       value
@@ -125,6 +126,37 @@ export default function HealthRecord() {
 
       load();
    }, []);
+
+   // Handle modal accessibility: Escape key, focus management, and backdrop click
+   useEffect(() => {
+      if (!editingRecordId) return;
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+         if (e.key === 'Escape') {
+            cancelRecordEdit();
+         }
+      };
+
+      const handleBackdropClick = (e: MouseEvent) => {
+         if (modalRef.current === e.target) {
+            cancelRecordEdit();
+         }
+      };
+
+      // Focus the modal heading when opened
+      const heading = modalRef.current?.querySelector('h3');
+      if (heading && heading instanceof HTMLElement) {
+         heading.focus();
+      }
+
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('click', handleBackdropClick);
+
+      return () => {
+         document.removeEventListener('keydown', handleKeyDown);
+         document.removeEventListener('click', handleBackdropClick);
+      };
+   }, [editingRecordId]);
 
    const resetMemberForm = () => {
       setMemberName('');
@@ -518,7 +550,7 @@ export default function HealthRecord() {
                            </p>
                         )}
                         <DotLottieReact
-                           data={doctorAnimation}
+                           data={doctorAnimationUrl}
                            autoplay
                            loop
                            style={{ height: 500, width: 500, paddingTop: 40 }}
@@ -623,10 +655,20 @@ export default function HealthRecord() {
          </div>
 
          {editingRecordId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4">
+            <div
+               ref={modalRef}
+               className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4"
+               role="dialog"
+               aria-modal="true"
+               aria-labelledby="edit-record-title"
+            >
                <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
                   <div className="mb-3 flex items-center justify-between">
-                     <h3 className="text-lg font-semibold text-slate-900">
+                     <h3
+                        id="edit-record-title"
+                        tabIndex={-1}
+                        className="text-lg font-semibold text-slate-900"
+                     >
                         Edit Health Record
                      </h3>
                      <button
