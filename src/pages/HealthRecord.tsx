@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import doctorAnimationUrl from '../assets/lottie/doctor-animation.json?url';
 
 import { apiRequest } from '../lib/api';
 
@@ -45,6 +47,7 @@ export default function HealthRecord() {
    const [filterToDate, setFilterToDate] = useState('');
    const [recordSortBy, setRecordSortBy] = useState<RecordSortKey>('latest');
    const [colorBlindMode, setColorBlindMode] = useState(false);
+   const modalRef = useRef<HTMLDivElement>(null);
 
    const parseSymptoms = (value: string) =>
       value
@@ -123,6 +126,37 @@ export default function HealthRecord() {
 
       load();
    }, []);
+
+   // Handle modal accessibility: Escape key, focus management, and backdrop click
+   useEffect(() => {
+      if (!editingRecordId) return;
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+         if (e.key === 'Escape') {
+            cancelRecordEdit();
+         }
+      };
+
+      const handleBackdropClick = (e: MouseEvent) => {
+         if (modalRef.current === e.target) {
+            cancelRecordEdit();
+         }
+      };
+
+      // Focus the modal heading when opened
+      const heading = modalRef.current?.querySelector('h3');
+      if (heading && heading instanceof HTMLElement) {
+         heading.focus();
+      }
+
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('click', handleBackdropClick);
+
+      return () => {
+         document.removeEventListener('keydown', handleKeyDown);
+         document.removeEventListener('click', handleBackdropClick);
+      };
+   }, [editingRecordId]);
 
    const resetMemberForm = () => {
       setMemberName('');
@@ -472,128 +506,198 @@ export default function HealthRecord() {
             />
          </section>
 
-         <section className="mt-6">
-            <h3 className="text-lg font-semibold text-slate-900">
+         <div className="relative mt-8 space-y-6 rounded-[28px] border border-slate-500/80 p-5 pt-8 shadow-lg md:p-6 md:pt-8">
+            <h3 className="absolute -top-4 left-4 bg-white px-3 text-lg font-semibold text-slate-900">
                Member Profile
             </h3>
-            <MemberProfileCard
-               member={selectedMember}
-               onEditProfile={openEditMemberForm}
-               onDeleteProfile={deleteSelectedMember}
-            />
-         </section>
+            <section>
+               <MemberProfileCard
+                  member={selectedMember}
+                  onEditProfile={openEditMemberForm}
+                  onDeleteProfile={deleteSelectedMember}
+               />
+            </section>
+         </div>
 
-         <section className="mt-6">
-            <h3 className="text-lg font-semibold text-slate-900">
+         <div className="relative mt-8 space-y-6 rounded-[28px] border border-slate-500/80 p-5 pt-8 shadow-lg md:p-6 md:pt-8">
+            <h3 className="absolute -top-4 left-4 bg-white px-3 text-lg font-semibold text-slate-900">
                Record Health Metrics
             </h3>
+            <section>
+               <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_630px]">
+                  <HealthMetricsForm
+                     temperature={temperature}
+                     oxygen={oxygen}
+                     pulseRate={pulseRate}
+                     autoDetectedSymptoms={autoDetectedSymptoms}
+                     additionalSymptomsInput={additionalSymptomsInput}
+                     selectedMemberId={selectedMemberId}
+                     isEditing={false}
+                     metricAlerts={metricAlerts}
+                     setTemperature={setTemperature}
+                     setOxygen={setOxygen}
+                     setPulseRate={setPulseRate}
+                     setAdditionalSymptomsInput={setAdditionalSymptomsInput}
+                     onSaveRecord={saveRecord}
+                     onCancelEdit={cancelRecordEdit}
+                  />
+                  <aside className="relative overflow-hidden rounded-2xl border border-blue-100 bg-linear-to-br from-blue-50 via-indigo-50 to-cyan-50 p-5">
+                     <div className="flex flex-col items-center justify-center">
+                        {!selectedMemberId && (
+                           <p className="pt-5 font-bold">
+                              Add at least one family member to start saving
+                              records
+                           </p>
+                        )}
+                        <DotLottieReact
+                           data={doctorAnimationUrl}
+                           autoplay
+                           loop
+                           style={{ height: 500, width: 500, paddingTop: 40 }}
+                        />
+                     </div>
+                  </aside>
+               </div>
+            </section>
+         </div>
 
-            <HealthMetricsForm
-               temperature={temperature}
-               oxygen={oxygen}
-               pulseRate={pulseRate}
-               autoDetectedSymptoms={autoDetectedSymptoms}
-               additionalSymptomsInput={additionalSymptomsInput}
-               selectedMemberId={selectedMemberId}
-               isEditing={Boolean(editingRecordId)}
-               metricAlerts={metricAlerts}
-               setTemperature={setTemperature}
-               setOxygen={setOxygen}
-               setPulseRate={setPulseRate}
-               setAdditionalSymptomsInput={setAdditionalSymptomsInput}
-               onSaveRecord={saveRecord}
-               onCancelEdit={cancelRecordEdit}
-            />
-         </section>
-
-         <section className="mt-6">
-            <h3 className="text-lg font-semibold text-slate-900">
+         <div className="relative mt-8 space-y-6 rounded-[28px] border border-slate-500/80 p-5 pt-8 shadow-lg md:p-6 md:pt-8">
+            <h3 className="absolute -top-4 left-4 bg-white px-3 text-lg font-semibold text-slate-900">
                Health Trends
             </h3>
-            <p className="mt-1 text-sm text-slate-500">
-               A line chart is best here because these vitals are time-based
-               data and trends over time are easier to spot.
-            </p>
-            <HealthTrendsChart
-               records={records}
-               selectedMemberId={selectedMemberId}
-            />
-         </section>
+            <section>
+               <p className="mt-1 text-sm text-slate-500">
+                  A line chart is best here because these vitals are time-based
+                  data and trends over time are easier to spot.
+               </p>
+               <HealthTrendsChart
+                  records={records}
+                  selectedMemberId={selectedMemberId}
+               />
+            </section>
+         </div>
 
-         <div className="mt-6">
-            <h3 className="text-lg font-semibold text-slate-900">
+         <div className="relative mt-8 space-y-6 rounded-[28px] border border-slate-500/80 p-5 pt-8 shadow-lg md:p-6 md:pt-8">
+            <h3 className="absolute -top-4 left-4 bg-white px-3 text-lg font-semibold text-slate-900">
                Health Records History
             </h3>
-            <div className="mt-3 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
-               <label className="grid gap-1 text-sm font-semibold text-slate-700">
-                  From
-                  <input
-                     type="date"
-                     value={filterFromDate}
-                     onChange={(e) => setFilterFromDate(e.target.value)}
-                     className="rounded-lg border border-slate-300  bg-white px-3 py-2 text-sm"
-                  />
-               </label>
-               <label className="grid gap-1 text-sm font-semibold text-slate-700">
-                  From
-                  <input
-                     type="date"
-                     value={filterToDate}
-                     onChange={(e) => setFilterToDate(e.target.value)}
-                     className="rounded-lg border border-slate-300  bg-white px-3 py-2 text-sm"
-                  />
-               </label>
-               <label className="grid gap-1 text-sm font-semibold text-slate-700">
-                  Sort by
-                  <select
-                     value={recordSortBy}
-                     onChange={(e) =>
-                        setRecordSortBy(e.target.value as RecordSortKey)
-                     }
-                     className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
-                  >
-                     <option value="latest">Latest first</option>
-                     <option value="temperature">
-                        Temperature (high to low)
-                     </option>
-                     <option value="oxygen">Oxygen (high to low)</option>
-                     <option value="pulse">Pulse (high to low)</option>
-                  </select>
-               </label>
+            <div>
+               <div className="mt-3 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-4">
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                     From
+                     <input
+                        type="date"
+                        value={filterFromDate}
+                        onChange={(e) => setFilterFromDate(e.target.value)}
+                        className="rounded-lg border border-slate-300  bg-white px-3 py-2 text-sm"
+                     />
+                  </label>
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                     To
+                     <input
+                        type="date"
+                        value={filterToDate}
+                        onChange={(e) => setFilterToDate(e.target.value)}
+                        className="rounded-lg border border-slate-300  bg-white px-3 py-2 text-sm"
+                     />
+                  </label>
+                  <label className="grid gap-1 text-sm font-semibold text-slate-700">
+                     Sort by
+                     <select
+                        value={recordSortBy}
+                        onChange={(e) =>
+                           setRecordSortBy(e.target.value as RecordSortKey)
+                        }
+                        className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                     >
+                        <option value="latest">Latest first</option>
+                        <option value="temperature">
+                           Temperature (high to low)
+                        </option>
+                        <option value="oxygen">Oxygen (high to low)</option>
+                        <option value="pulse">Pulse (high to low)</option>
+                     </select>
+                  </label>
 
-               <div className="flex items-end">
+                  <div className="flex items-end">
+                     <button
+                        onClick={() => {
+                           setFilterFromDate('');
+                           setFilterToDate('');
+                           setRecordSortBy('latest');
+                        }}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                     >
+                        Reset Filters
+                     </button>
+                  </div>
+               </div>
+
+               <div className="mt-3 flex justify-end">
                   <button
-                     onClick={() => {
-                        setFilterFromDate('');
-                        setFilterToDate('');
-                        setRecordSortBy('latest');
-                     }}
-                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
+                     onClick={() => setColorBlindMode((prev) => !prev)}
+                     className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
                   >
-                     Reset Filters
+                     {colorBlindMode
+                        ? 'Color-blind mode: ON'
+                        : 'Color-blind mode: OFF'}
                   </button>
                </div>
-            </div>
 
-            <div className="mt-3 flex justify-end">
-               <button
-                  onClick={() => setColorBlindMode((prev) => !prev)}
-                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-               >
-                  {colorBlindMode
-                     ? 'Color-blind mode: ON'
-                     : 'Color-blind mode: OFF'}
-               </button>
+               <HealthRecordsTable
+                  records={filteredAndSortedRecords}
+                  memberMap={memberMap}
+                  onEditRecord={editRecord}
+                  onDeleteRecord={deleteRecord}
+                  colorBlindMode={colorBlindMode}
+               />
             </div>
-
-            <HealthRecordsTable
-               records={filteredAndSortedRecords}
-               memberMap={memberMap}
-               onEditRecord={editRecord}
-               onDeleteRecord={deleteRecord}
-               colorBlindMode={colorBlindMode}
-            />
          </div>
+
+         {editingRecordId && (
+            <div
+               ref={modalRef}
+               className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4"
+               role="dialog"
+               aria-modal="true"
+               aria-labelledby="edit-record-title"
+            >
+               <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl">
+                  <div className="mb-3 flex items-center justify-between">
+                     <h3
+                        id="edit-record-title"
+                        tabIndex={-1}
+                        className="text-lg font-semibold text-slate-900"
+                     >
+                        Edit Health Record
+                     </h3>
+                     <button
+                        onClick={cancelRecordEdit}
+                        aria-label="Close"
+                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700"
+                     >
+                        X
+                     </button>
+                  </div>
+                  <HealthMetricsForm
+                     temperature={temperature}
+                     oxygen={oxygen}
+                     pulseRate={pulseRate}
+                     autoDetectedSymptoms={autoDetectedSymptoms}
+                     additionalSymptomsInput={additionalSymptomsInput}
+                     selectedMemberId={selectedMemberId}
+                     isEditing={true}
+                     metricAlerts={metricAlerts}
+                     setTemperature={setTemperature}
+                     setOxygen={setOxygen}
+                     setPulseRate={setPulseRate}
+                     setAdditionalSymptomsInput={setAdditionalSymptomsInput}
+                     onSaveRecord={saveRecord}
+                     onCancelEdit={cancelRecordEdit}
+                  />
+               </div>
+            </div>
+         )}
       </div>
    );
 }

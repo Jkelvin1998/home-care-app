@@ -77,7 +77,7 @@ export async function updateMember(req, res) {
          userId: req.user.id,
       },
       updatePayload,
-      { new: true },
+      { returnDocument: 'after' },
    );
 
    if (!updated) {
