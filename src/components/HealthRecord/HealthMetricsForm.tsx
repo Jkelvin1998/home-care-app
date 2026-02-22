@@ -155,12 +155,6 @@ export default function HealthMetricsForm({
                )}
             </div>
          </div>
-
-         {!selectedMemberId && (
-            <p style={{ marginTop: 8 }}>
-               Add at least one family member to start saving records
-            </p>
-         )}
       </>
    );
 }
