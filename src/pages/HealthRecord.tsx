@@ -561,7 +561,7 @@ export default function HealthRecord() {
                      />
                   </label>
                   <label className="grid gap-1 text-sm font-semibold text-slate-700">
-                     From
+                     To
                      <input
                         type="date"
                         value={filterToDate}
@@ -631,6 +631,7 @@ export default function HealthRecord() {
                      </h3>
                      <button
                         onClick={cancelRecordEdit}
+                        aria-label="Close"
                         className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700"
                      >
                         X
