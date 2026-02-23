@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-import doctorAnimationUrl from '../assets/lottie/doctor-animation.json?url';
+import doctorAnimationUrl from '../assets/lottie/doctor-animation.json';
 
 import { apiRequest } from '../lib/api';
 
@@ -452,8 +452,8 @@ export default function HealthRecord() {
    }
 
    return (
-      <div className="mx-auto max-w-7xl p-6">
-         <h2 className="text-2xl font-semibold text-slate-900">
+      <div className="mx-auto max-w-7xl relative mt-8 space-y-6 rounded-[28px] border border-slate-500/80 p-5 pt-8 shadow-lg md:p-6 md:pt-8">
+         <h2 className="absolute -top-4 left-4 bg-white px-3 text-2xl font-semibold text-slate-900">
             Health Records
          </h2>
 
