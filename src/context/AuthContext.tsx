@@ -10,6 +10,7 @@ type AuthUser = {
    id: string;
    name: string;
    email: string;
+   profilePicture?: string;
 };
 
 type LoginPayload = {

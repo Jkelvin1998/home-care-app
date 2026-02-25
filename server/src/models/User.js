@@ -11,6 +11,7 @@ const userSchema = new mongoose.Schema(
          trim: true,
       },
       passwordHash: { type: String, required: true },
+      profilePicture: { type: String, trim: true, default: '' },
    },
    { timestamps: true },
 );

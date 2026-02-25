@@ -19,7 +19,7 @@ function signToken(user) {
 }
 
 export async function signup(req, res) {
-   const { name, email, password } = req.body;
+   const { name, email, password, profilePicture } = req.body;
 
    if (!name || !email || !password) {
       return res
@@ -38,12 +38,18 @@ export async function signup(req, res) {
       name,
       email: email.toLowerCase(),
       passwordHash,
+      profilePicture: typeof profilePicture === 'string' ? profilePicture : '',
    });
    const token = signToken(user);
 
    return res.status(201).json({
       token,
-      user: { id: user._id.toString(), name: user.name, email: user.email },
+      user: {
+         id: user._id.toString(),
+         name: user.name,
+         email: user.email,
+         profilePicture: user.profilePicture,
+      },
    });
 }
 
@@ -72,18 +78,30 @@ export async function login(req, res) {
 
    return res.json({
       token,
-      user: { id: user._id.toString(), name: user.name, email: user.email },
+      user: {
+         id: user._id.toString(),
+         name: user.name,
+         email: user.email,
+         profilePicture: user.profilePicture,
+      },
    });
 }
 
 export async function getUser(req, res) {
-   const user = await User.findById(req.user.id).select('_id name email');
+   const user = await User.findById(req.user.id).select(
+      '_id name email profilePicture',
+   );
 
    if (!user) {
       return res.status(404).json({ message: 'User not found' });
    }
 
    return res.json({
-      user: { id: user._id.toString(), name: user.name, email: user.email },
+      user: {
+         id: user._id.toString(),
+         name: user.name,
+         email: user.email,
+         profilePicture: user.profilePicture,
+      },
    });
 }

@@ -1,32 +1,109 @@
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+const navigationItems = [
+   { label: 'Dashboard', to: '/' },
+   { label: 'Inventory', to: '/inventory' },
+   { label: 'Health Records', to: '/health-record' },
+];
+
 export default function Navbar() {
-   const { logout } = useAuth();
+   const location = useLocation();
+   const { user, logout } = useAuth();
+   const [isCollapsed, setIsCollapsed] = useState(false);
+
+   const userInitials = useMemo(() => {
+      if (!user?.name) return 'U';
+
+      return user.name
+         .split(' ')
+         .filter(Boolean)
+         .slice(0, 2)
+         .map((namePart) => namePart[0]?.toUpperCase() ?? '')
+         .join('');
+   }, [user?.name]);
 
    return (
-      <nav className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 px-6 py-4 text-sm font-semibold text-white">
-         <div className="flex flex-wrap items-center gap-4">
-            <Link to={'/'} className="hover:text-blue-200">
-               Dashboard
-            </Link>
-            <Link to={'/inventory'} className="hover:text-blue-200">
-               Inventory
-            </Link>
-            <Link to={'/health-record'} className="hover:text-blue-200">
-               Health
-            </Link>
+      <aside
+         className={`sticky top-0 flex h-screen flex-col justify-between overflow-hidden bg-slate-900 px-3 py-4 text-white transition-[width] duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-72'}`}
+      >
+         <div>
+            <button
+               type="button"
+               onClick={() => setIsCollapsed((prev) => !prev)}
+               className="mb-6 flex w-full items-center rounded-md bg-slate-800 px-3 py-2 text-left text-sm font-semibold hover:bg-slate-700"
+               aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+               <span className="w-5 shrink-0 text-center text-lg">&#9776;</span>
+               <span
+                  className={`ml-3 whitespace-nowrap transition-all duration-200 ${isCollapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-24 translate-x-0 opacity-100'}`}
+               >
+                  Menu
+               </span>
+            </button>
          </div>
 
-         <div className="flex items-center gap-3">
+         <div>
+            <nav className="space-y-2">
+               {navigationItems.map((item) => {
+                  const isActive =
+                     location.pathname === item.to ||
+                     (item.to !== '/' && location.pathname.startsWith(item.to));
+
+                  return (
+                     <Link
+                        key={item.to}
+                        to={item.to}
+                        className={`flex items-center rounded-md px-3 py-2 text-sm font-semibold transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-200 hover:bg-slate-800'}`}
+                     >
+                        <span className="w-5 shrink-0 text-center">
+                           {item.label.charAt(0)}
+                        </span>
+                        <span
+                           className={`ml-3 whitespace-nowrap transition-all duration-200 ${isCollapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-40 translate-x-0 opacity-100'}`}
+                        >
+                           {item.label}
+                        </span>
+                     </Link>
+                  );
+               })}
+            </nav>
+         </div>
+
+         <div className="border-t border-slate-700 pt-4">
+            <div className="mb-3 flex items-center gap-3 overflow-hidden">
+               {user?.profilePicture ? (
+                  <img
+                     src={user.profilePicture}
+                     alt={user.name}
+                     className="h-10 w-10 shrink-0 rounded-full object-cover"
+                  />
+               ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white">
+                     {userInitials}
+                  </div>
+               )}
+
+               <div
+                  className={`min-w-0 whitespace-nowrap transition-all duration-200 ${isCollapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-48 translate-x-0 opacity-100'}`}
+               >
+                  <p className="truncate text-sm font-semibold text-white">
+                     {user?.name ?? 'User'}
+                  </p>
+                  <p className="truncate text-xs text-slate-300">
+                     {user?.email ?? ''}
+                  </p>
+               </div>
+            </div>
             <button
                type="button"
                onClick={logout}
-               className="rounded-full border border-white/30 px-3 py-1 hover:border-white"
+               className="w-full rounded-md border border-white/30 px-3 py-2 text-sm font-semibold hover:border-white"
             >
-               Logout
+               {isCollapsed ? '->' : 'Logout'}
             </button>
          </div>
-      </nav>
+      </aside>
    );
 }

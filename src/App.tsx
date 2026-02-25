@@ -23,54 +23,68 @@ function AppLayout() {
    const hideNavbar =
       location.pathname === '/login' || location.pathname === '/signup';
 
+   if (!hideNavbar && isAuthenticated) {
+      return (
+         <div className="flex min-h-screen bg-slate-100">
+            <Navbar />
+
+            <main className="flex-1 p-4 md:p-6">
+               <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/health-record" element={<HealthRecord />} />
+                  <Route path="*" element={<Navigate to={'/'} replace />} />
+               </Routes>
+            </main>
+         </div>
+      );
+   }
+
    return (
-      <>
-         {!hideNavbar && isAuthenticated && <Navbar />}
+      <Routes>
+         <Route
+            path="/login"
+            element={
+               isAuthenticated ? <Navigate to={'/'} replace /> : <Login />
+            }
+         />
 
-         <Routes>
-            <Route
-               path="/login"
-               element={
-                  isAuthenticated ? <Navigate to={'/'} replace /> : <Login />
-               }
-            />
-            <Route
-               path="/signup"
-               element={
-                  isAuthenticated ? <Navigate to={'/'} replace /> : <Signup />
-               }
-            />
+         <Route
+            path="/signup"
+            element={
+               isAuthenticated ? <Navigate to={'/'} replace /> : <Signup />
+            }
+         />
 
-            <Route
-               path="/"
-               element={
-                  <ProtectedRoute>
-                     <Dashboard />
-                  </ProtectedRoute>
-               }
-            />
+         <Route
+            path="/"
+            element={
+               <ProtectedRoute>
+                  <Dashboard />
+               </ProtectedRoute>
+            }
+         />
 
-            <Route
-               path="/inventory"
-               element={
-                  <ProtectedRoute>
-                     <Inventory />
-                  </ProtectedRoute>
-               }
-            />
+         <Route
+            path="/inventory"
+            element={
+               <ProtectedRoute>
+                  <Inventory />
+               </ProtectedRoute>
+            }
+         />
 
-            <Route
-               path="/health-record"
-               element={
-                  <ProtectedRoute>
-                     <HealthRecord />
-                  </ProtectedRoute>
-               }
-            />
+         <Route
+            path="/health-record"
+            element={
+               <ProtectedRoute>
+                  <HealthRecord />
+               </ProtectedRoute>
+            }
+         />
 
-            <Route path="*" element={<Navigate to={'/'} replace />} />
-         </Routes>
-      </>
+         <Route path="*" element={<Navigate to={'/'} replace />} />
+      </Routes>
    );
 }
 
