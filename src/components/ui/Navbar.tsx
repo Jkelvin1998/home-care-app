@@ -57,7 +57,8 @@ export default function Navbar() {
                {navigationItems.map((item) => {
                   const isActive =
                      location.pathname === item.to ||
-                     (item.to !== '/' && location.pathname.startsWith(item.to));
+                     (item.to !== '/' &&
+                        location.pathname.startsWith(`${item.to}/`));
 
                   return (
                      <Link
@@ -119,20 +120,9 @@ export default function Navbar() {
                   Logout
                </span>
             </button>
-            {/* <button
-               type="button"
-               onClick={logout}
-               className="w-full rounded-md border border-white/30 px-3 py-2 text-sm font-semibold hover:border-white"
-            >
-               {isCollapsed ? (
-                  <>
-                     <MdLogout className="text-2xl" />
-                  </>
-               ) : (
-                  'Logout'
-               )}
-            </button> */}
+
          </div>
       </aside>
    );
 }
+

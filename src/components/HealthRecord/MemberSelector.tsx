@@ -6,6 +6,9 @@ type MemberSelectorProps = {
    onSelectMember: (memberId: string) => void;
 };
 
+const memberButtonBaseClasses =
+   'rounded-t-2xl border-b-2 border-blue-500 px-6 py-1 text-sm font-semibold -mr-3';
+
 export default function MemberSelector({
    members,
    selectedMemberId,
@@ -20,7 +23,7 @@ export default function MemberSelector({
                <button
                   key={member.id}
                   onClick={() => onSelectMember(member.id)}
-                  className={`rounded-t-2xl border-b-2 border-blue-500 px-6 py-1 text-sm font-semibold -mr-3 ${member.id === selectedMemberId ? 'border-b-2 border-blue-500 bg-blue-500 text-white z-10' : 'bg-white text-slate-700'}`}
+                  className={`${memberButtonBaseClasses} ${member.id === selectedMemberId ? 'bg-blue-500 text-white z-10' : 'bg-white text-slate-700'}`}
                >
                   {member.name}
                </button>
