@@ -22,7 +22,9 @@ export default function MemberSelector({
             members.map((member) => (
                <button
                   key={member.id}
+                  type="button"
                   onClick={() => onSelectMember(member.id)}
+                  aria-pressed={member.id === selectedMemberId}
                   className={`${memberButtonBaseClasses} ${member.id === selectedMemberId ? 'bg-blue-500 text-white z-10' : 'bg-white text-slate-700'}`}
                >
                   {member.name}
