@@ -2,10 +2,16 @@ import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+import { MdDashboard } from 'react-icons/md';
+import { MdInventory } from 'react-icons/md';
+import { RiHealthBookLine } from 'react-icons/ri';
+import { IoMenu } from 'react-icons/io5';
+import { MdLogout } from 'react-icons/md';
+
 const navigationItems = [
-   { label: 'Dashboard', to: '/' },
-   { label: 'Inventory', to: '/inventory' },
-   { label: 'Health Records', to: '/health-record' },
+   { label: 'Dashboard', icon: MdDashboard, to: '/' },
+   { label: 'Inventory', icon: MdInventory, to: '/inventory' },
+   { label: 'Health Records', icon: RiHealthBookLine, to: '/health-record' },
 ];
 
 export default function Navbar() {
@@ -35,7 +41,9 @@ export default function Navbar() {
                className="mb-6 flex w-full items-center rounded-md bg-slate-800 px-3 py-2 text-left text-sm font-semibold hover:bg-slate-700"
                aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-               <span className="w-5 shrink-0 text-center text-lg">&#9776;</span>
+               <span className="w-5 shrink-0 text-center text-lg">
+                  <IoMenu className="text-2xl font-extrabold" />
+               </span>
                <span
                   className={`ml-3 whitespace-nowrap transition-all duration-200 ${isCollapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-24 translate-x-0 opacity-100'}`}
                >
@@ -59,7 +67,7 @@ export default function Navbar() {
                         className={`flex items-center rounded-md px-3 py-2 text-sm font-semibold transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-slate-200 hover:bg-slate-800'}`}
                      >
                         <span className="w-5 shrink-0 text-center">
-                           {item.label.charAt(0)}
+                           <item.icon className="text-2xl font-extrabold" />
                         </span>
                         <span
                            className={`ml-3 whitespace-nowrap transition-all duration-200 ${isCollapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-40 translate-x-0 opacity-100'}`}
@@ -97,15 +105,24 @@ export default function Navbar() {
                   </p>
                </div>
             </div>
+
             <button
                type="button"
                onClick={logout}
-               aria-label="Logout"
-               className="w-full rounded-md border border-white/30 px-3 py-2 text-sm font-semibold hover:border-white"
+               className="flex w-full items-center rounded-md bg-slate-800 px-3 py-2 text-left text-sm font-semibold hover:bg-slate-700"
             >
-               {isCollapsed ? '→' : 'Logout'}
+               <span className="w-5 shrink-0 text-center text-lg">
+                  <MdLogout className="text-2xl" />
+               </span>
+               <span
+                  className={`ml-3 whitespace-nowrap transition-all duration-200 ${isCollapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-24 translate-x-0 opacity-100'}`}
+               >
+                  Logout
+               </span>
             </button>
+
          </div>
       </aside>
    );
 }
+
