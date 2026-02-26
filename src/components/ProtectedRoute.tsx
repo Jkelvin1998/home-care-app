@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Loading from './ui/Loading';
 
 type ProtectedRouteProps = {
    children: React.ReactNode;
@@ -9,9 +10,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
    const { isAuthenticated, isAuthLoading } = useAuth();
 
    if (isAuthLoading) {
-      return (
-         <div className="p-6 text-sm text-slate-600">Checking session....</div>
-      );
+      return <Loading />;
    }
 
    if (!isAuthenticated) {
