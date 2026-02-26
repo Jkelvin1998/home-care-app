@@ -19,9 +19,15 @@ import Signup from './pages/Signup';
 
 function AppLayout() {
    const location = useLocation();
-   const { isAuthenticated } = useAuth();
+   const { isAuthenticated, isAuthLoading } = useAuth();
    const hideNavbar =
       location.pathname === '/login' || location.pathname === '/signup';
+
+   if (isAuthLoading) {
+      return (
+         <div className="p-6 text-sm text-slate-600">Checking session...</div>
+      );
+   }
 
    if (!hideNavbar && isAuthenticated) {
       return (
