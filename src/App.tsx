@@ -35,12 +35,14 @@ function AppLayout() {
             <Navbar />
 
             <main className="flex-1 p-4 md:p-6">
-               <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/health-record" element={<HealthRecord />} />
-                  <Route path="*" element={<Navigate to={'/'} replace />} />
-               </Routes>
+               <ProtectedRoute>
+                  <Routes>
+                     <Route path="/" element={<Dashboard />} />
+                     <Route path="/inventory" element={<Inventory />} />
+                     <Route path="/health-record" element={<HealthRecord />} />
+                     <Route path="*" element={<Navigate to={'/'} replace />} />
+                  </Routes>
+               </ProtectedRoute>
             </main>
          </div>
       );
@@ -62,34 +64,7 @@ function AppLayout() {
             }
          />
 
-         <Route
-            path="/"
-            element={
-               <ProtectedRoute>
-                  <Dashboard />
-               </ProtectedRoute>
-            }
-         />
-
-         <Route
-            path="/inventory"
-            element={
-               <ProtectedRoute>
-                  <Inventory />
-               </ProtectedRoute>
-            }
-         />
-
-         <Route
-            path="/health-record"
-            element={
-               <ProtectedRoute>
-                  <HealthRecord />
-               </ProtectedRoute>
-            }
-         />
-
-         <Route path="*" element={<Navigate to={'/'} replace />} />
+         <Route path="*" element={<Navigate to={'/login'} replace />} />
       </Routes>
    );
 }
