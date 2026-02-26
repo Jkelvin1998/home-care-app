@@ -7,7 +7,7 @@ import {
 } from 'react-router-dom';
 
 import Navbar from './components/ui/Navbar';
-import ProtectedRoute from './components/ProtectedRoute';
+import Loading from './components/ui/Loading';
 
 import { useAuth, AuthProvider } from './context/AuthContext';
 
@@ -24,9 +24,7 @@ function AppLayout() {
       location.pathname === '/login' || location.pathname === '/signup';
 
    if (isAuthLoading) {
-      return (
-         <div className="p-6 text-sm text-slate-600">Checking session...</div>
-      );
+      return <Loading />;
    }
 
    if (!hideNavbar && isAuthenticated) {
@@ -35,14 +33,12 @@ function AppLayout() {
             <Navbar />
 
             <main className="flex-1 p-4 md:p-6">
-               <ProtectedRoute>
-                  <Routes>
-                     <Route path="/" element={<Dashboard />} />
-                     <Route path="/inventory" element={<Inventory />} />
-                     <Route path="/health-record" element={<HealthRecord />} />
-                     <Route path="*" element={<Navigate to={'/'} replace />} />
-                  </Routes>
-               </ProtectedRoute>
+               <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/inventory" element={<Inventory />} />
+                  <Route path="/health-record" element={<HealthRecord />} />
+                  <Route path="*" element={<Navigate to={'/'} replace />} />
+               </Routes>
             </main>
          </div>
       );
