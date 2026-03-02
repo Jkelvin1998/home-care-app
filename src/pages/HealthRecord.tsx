@@ -177,11 +177,14 @@ export default function HealthRecord() {
                   { auth: true },
                );
 
+               if (cancelled) return;
                setCollaborators(collaboratorsData);
             } catch {
+               if (cancelled) return;
                setCollaborators([]);
             }
 
+            if (cancelled) return;
             if (membersData.length > 0) {
                setSelectedMemberId((prev) =>
                   membersData.some((member) => member.id === prev)
