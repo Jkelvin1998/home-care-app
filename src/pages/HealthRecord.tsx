@@ -149,6 +149,7 @@ export default function HealthRecord() {
 
    useEffect(() => {
       if (!selectedCareOwnerId) return;
+      let cancelled = false;
 
       const load = async () => {
          setLoading(true);
@@ -157,25 +158,29 @@ export default function HealthRecord() {
          try {
             const careOwnerQuery = `?careOwnerId=${selectedCareOwnerId}`;
             const collaboratorsQuery = `?ownerId=${selectedCareOwnerId}`;
-            const [membersData, recordsData, collaboratorsData] =
-               await Promise.all([
-                  apiRequest<FamilyMember[]>(`/members${careOwnerQuery}`, {
-                     auth: true,
-                  }),
-                  apiRequest<Health[]>(`/records${careOwnerQuery}`, {
-                     auth: true,
-                  }),
-                  apiRequest<Collaborator[]>(
-                     `/care-team/collaborators${collaboratorsQuery}`,
-                     {
-                        auth: true,
-                     },
-                  ),
-               ]);
+            const [membersData, recordsData] = await Promise.all([
+               apiRequest<FamilyMember[]>(`/members${careOwnerQuery}`, {
+                  auth: true,
+               }),
+               apiRequest<Health[]>(`/records${careOwnerQuery}`, {
+                  auth: true,
+               }),
+            ]);
 
+            if (cancelled) return;
             setMembers(membersData);
             setRecords(recordsData);
-            setCollaborators(collaboratorsData);
+
+            try {
+               const collaboratorsData = await apiRequest<Collaborator[]>(
+                  `/care-team/collaborators${collaboratorsQuery}`,
+                  { auth: true },
+               );
+
+               setCollaborators(collaboratorsData);
+            } catch {
+               setCollaborators([]);
+            }
 
             if (membersData.length > 0) {
                setSelectedMemberId((prev) =>
@@ -193,11 +198,15 @@ export default function HealthRecord() {
                   : 'Failed to load health data',
             );
          } finally {
-            setLoading(false);
+            if (!cancelled) setLoading(false);
          }
       };
 
       load();
+
+      return () => {
+         cancelled = true;
+      };
    }, [selectedCareOwnerId]);
 
    // Handle modal accessibility: Escape key, focus management, and backdrop click
