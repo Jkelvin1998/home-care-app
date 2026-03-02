@@ -1,5 +1,6 @@
 import FamilyMember from '../models/FamilyMember.js';
 import HealthRecord from '../models/HealthRecord.js';
+import { canAccessOwner, resolveOwnerId } from '../utils/access.js';
 
 function normalize(member) {
    return {
@@ -14,7 +15,13 @@ function normalize(member) {
 }
 
 export async function listMembers(req, res) {
-   const members = await FamilyMember.find({ userId: req.user.id }).sort({
+   const ownerId = await resolveOwnerId(req);
+
+   if (!ownerId) {
+      return res.status(403).json({ message: 'Access denied for care owner' });
+   }
+
+   const members = await FamilyMember.find({ userId: ownerId }).sort({
       createdAt: 1,
    });
 
@@ -25,21 +32,20 @@ export async function createMember(req, res) {
    const { name, dateOfBirth, gender, weightKg, heightCm, profileImage } =
       req.body;
 
-   if (
-      !name ||
-      !dateOfBirth ||
-      !gender ||
-      !weightKg ||
-      !heightCm ||
-      !profileImage
-   ) {
+   if (!name || !dateOfBirth || !gender || !weightKg || !heightCm) {
       return res
          .status(400)
          .json({ message: 'Missing required member fields' });
    }
 
+   const ownerId = await resolveOwnerId(req);
+
+   if (!ownerId) {
+      return res.status(403).json({ message: 'Access denied for care owner' });
+   }
+
    const member = await FamilyMember.create({
-      userId: req.user.id,
+      userId: ownerId,
       name,
       dateOfBirth,
       gender,
@@ -61,6 +67,7 @@ export async function updateMember(req, res) {
       'heightCm',
       'profileImage',
    ];
+
    const updatePayload = Object.fromEntries(
       Object.entries(req.body).filter(([key]) => allowedFields.includes(key)),
    );
@@ -71,33 +78,40 @@ export async function updateMember(req, res) {
          .json({ message: 'No valid fields provided for update' });
    }
 
-   const updated = await FamilyMember.findOneAndUpdate(
-      {
-         _id: id,
-         userId: req.user.id,
-      },
-      updatePayload,
-      { returnDocument: 'after' },
-   );
-
-   if (!updated) {
-      return res.status(404).json({ message: 'Record not found' });
-   }
-
-   return res.json(normalize(updated));
-}
-
-export async function deleteMember(req, res) {
-   const { id } = req.params;
-   const member = await FamilyMember.findOneAndDelete({
-      _id: id,
-      userId: req.user.id,
-   });
+   const member = await FamilyMember.findById(id);
 
    if (!member) {
       return res.status(404).json({ message: 'Member not found' });
    }
 
-   await HealthRecord.deleteMany({ userId: req.user.id, memberId: id });
+   const allowed = await canAccessOwner(req.user.id, member.userId.toString());
+
+   if (!allowed) {
+      return res.status(403).json({ message: 'Access denied for member' });
+   }
+
+   Object.assign(member, updatePayload);
+   await member.save();
+
+   return res.json(normalize(member));
+}
+
+export async function deleteMember(req, res) {
+   const { id } = req.params;
+   const member = await FamilyMember.findById(id);
+
+   if (!member) {
+      return res.status(404).json({ message: 'Member not found' });
+   }
+
+   const ownerId = member.userId.toString();
+   const allowed = await canAccessOwner(req.user.id, ownerId);
+
+   if (!allowed) {
+      return res.status(403).json({ message: 'Access denied for member' });
+   }
+
+   await member.deleteOne();
+   await HealthRecord.deleteMany({ userId: ownerId, memberId: id });
    return res.status(204).send();
 }

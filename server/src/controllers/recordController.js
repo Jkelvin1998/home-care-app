@@ -1,4 +1,6 @@
+import FamilyMember from '../models/FamilyMember.js';
 import HealthRecord from '../models/HealthRecord.js';
+import { canAccessOwner, resolveOwnerId } from '../utils/access.js';
 
 function normalize(record) {
    return {
@@ -14,7 +16,14 @@ function normalize(record) {
 
 export async function listRecords(req, res) {
    const { memberId } = req.query;
-   const query = { userId: req.user.id };
+
+   const ownerId = await resolveOwnerId(req);
+
+   if (!ownerId) {
+      return res.status(403).json({ message: 'Access denied for care owner' });
+   }
+
+   const query = { userId: ownerId };
 
    if (memberId) query.memberId = memberId;
 
@@ -30,8 +39,21 @@ export async function createRecord(req, res) {
       return res.status(400).json({ message: 'memberId is required' });
    }
 
+   const member = await FamilyMember.findById(memberId).select('_id userId');
+
+   if (!member) {
+      return res.status(404).json({ message: 'Member not found' });
+   }
+
+   const ownerId = member.userId.toString();
+   const allowed = await canAccessOwner(req.user.id, ownerId);
+
+   if (!allowed) {
+      return res.status(403).json({ message: 'Access denied for member' });
+   }
+
    const record = await HealthRecord.create({
-      userId: req.user.id,
+      userId: ownerId,
       memberId,
       savedAt: savedAt ?? new Date().toISOString(),
       temperature,
@@ -46,32 +68,52 @@ export async function createRecord(req, res) {
 export async function updateRecord(req, res) {
    const { id } = req.params;
    const { temperature, oxygen, pulseRate, symptoms } = req.body;
-   const updated = await HealthRecord.findOneAndUpdate(
-      {
-         _id: id,
-         userId: req.user.id,
-      },
-      { temperature, oxygen, pulseRate, symptoms },
-      { returnDocument: 'after' },
-   );
+   const record = await HealthRecord.findById(id);
 
-   if (!updated) {
+   if (!record) {
       return res.status(404).json({ message: 'Record not found' });
    }
 
-   return res.json(normalize(updated));
+   const allowed = await canAccessOwner(req.user.id, record.userId.toString());
+
+   if (!allowed) {
+      return res.status(403).json({ message: 'Access denied for record' });
+   }
+
+   const hasUpdates = [temperature, oxygen, pulseRate, symptoms].some(
+      (value) => value !== undefined,
+   );
+
+   if (!hasUpdates) {
+      return res
+         .status(400)
+         .json({ message: 'No valid fields provided for update' });
+   }
+
+   if (temperature !== undefined) record.temperature = temperature;
+   if (oxygen !== undefined) record.oxygen = oxygen;
+   if (pulseRate !== undefined) record.pulseRate = pulseRate;
+   if (symptoms !== undefined) record.symptoms = symptoms;
+   await record.save();
+
+   return res.json(normalize(record));
 }
 
 export async function deleteRecord(req, res) {
    const { id } = req.params;
-   const deleted = await HealthRecord.findOneAndDelete({
-      _id: id,
-      userId: req.user.id,
-   });
+   const record = await HealthRecord.findById(id);
 
-   if (!deleted) {
+   if (!record) {
       return res.status(404).json({ message: 'Record not found' });
    }
+
+   const allowed = await canAccessOwner(req.user.id, record.userId.toString());
+
+   if (!allowed) {
+      return res.status(403).json({ message: 'Access denied for record' });
+   }
+
+   await record.deleteOne();
 
    return res.status(204).send();
 }
