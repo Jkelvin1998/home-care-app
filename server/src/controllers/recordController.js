@@ -80,10 +80,20 @@ export async function updateRecord(req, res) {
       return res.status(403).json({ message: 'Access denied for record' });
    }
 
-   record.temperature = temperature;
-   record.oxygen = oxygen;
-   record.pulseRate = pulseRate;
-   record.symptoms = symptoms;
+   const hasUpdates = [temperature, oxygen, pulseRate, symptoms].some(
+      (value) => value !== undefined,
+   );
+
+   if (!hasUpdates) {
+      return res
+         .status(400)
+         .json({ message: 'No valid fields provided for update' });
+   }
+
+   if (temperature !== undefined) record.temperature = temperature;
+   if (oxygen !== undefined) record.oxygen = oxygen;
+   if (pulseRate !== undefined) record.pulseRate = pulseRate;
+   if (symptoms !== undefined) record.symptoms = symptoms;
    await record.save();
 
    return res.json(normalize(record));

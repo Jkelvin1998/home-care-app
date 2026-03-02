@@ -81,7 +81,7 @@ export async function updateMember(req, res) {
    const member = await FamilyMember.findById(id);
 
    if (!member) {
-      return res.status(404).json({ message: 'Record not found' });
+      return res.status(404).json({ message: 'Member not found' });
    }
 
    const allowed = await canAccessOwner(req.user.id, member.userId.toString());

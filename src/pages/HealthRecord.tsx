@@ -330,6 +330,7 @@ export default function HealthRecord() {
                   weightKg: memberWeight,
                   heightCm: memberHeight,
                   profileImage: memberProfileImage || undefined,
+                  careOwnerId: selectedCareOwnerId,
                }),
             });
             setMembers((prev) => [...prev, created]);

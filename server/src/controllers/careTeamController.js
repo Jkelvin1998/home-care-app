@@ -32,6 +32,11 @@ export async function listCareOwners(req, res) {
 
 export async function listCollaborators(req, res) {
    const ownerId = req.query.ownerId || req.user.id;
+   const objectIdPattern = /^[a-f\d]{24}$/i;
+
+   if (req.query.ownerId && !objectIdPattern.test(String(req.query.ownerId))) {
+      return res.status(400).json({ message: 'Invalid ownerId' });
+   }
 
    if (ownerId !== req.user.id) {
       const access = await CareAccess.findOne({
@@ -108,6 +113,11 @@ export async function addCollaborator(req, res) {
 
 export async function removeCollaborator(req, res) {
    const { id } = req.params;
+   const objectIdPattern = /^[a-f\d]{24}/i;
+
+   if (!objectIdPattern.test(String(id))) {
+      return res.status(400).json({ message: 'Invalid Collaborator id' });
+   }
 
    const access = await CareAccess.findOneAndDelete({
       _id: id,
