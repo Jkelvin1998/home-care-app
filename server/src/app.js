@@ -4,6 +4,7 @@ import express from 'express';
 import authRoutes from './routes/authRoutes.js';
 import memberRoutes from './routes/memberRoutes.js';
 import recordRoutes from './routes/recordRoutes.js';
+import careTeamRoutes from './routes/careTeamRoutes.js';
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/records', recordRoutes);
+app.use('/api/care-team', careTeamRoutes);
 
 app.use((err, _req, res, _next) => {
    console.error(err);
