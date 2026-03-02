@@ -131,6 +131,8 @@ export default function HealthRecord() {
 
             if (owners.length > 0) {
                setSelectedCareOwnerId((prev) => prev || owners[0].id);
+            } else {
+               setLoading(false);
             }
          } catch (err) {
             setError(
@@ -138,6 +140,7 @@ export default function HealthRecord() {
                   ? err.message
                   : 'Failed to load care owners',
             );
+            setLoading(false);
          }
       };
 
