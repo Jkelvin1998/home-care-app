@@ -51,6 +51,8 @@ export function CareProvider({ children }: CareProviderProps) {
    const [careError, setCareError] = useState('');
 
    useEffect(() => {
+      let cancelled = false;
+
       if (!isAuthenticated) {
          setCareOwners([]);
          setSelectedCareOwnerId('');
@@ -66,10 +68,18 @@ export function CareProvider({ children }: CareProviderProps) {
                auth: true,
             });
 
+            if (cancelled) return;
+
             setCareOwners(owners);
-            setSelectedCareOwnerId((prev) => prev || owners[0]?.id || '');
+            setSelectedCareOwnerId((prev) =>
+               owners.some((owner) => owner.id === prev)
+                  ? prev
+                  : owners[0]?.id || '',
+            );
             setCareError('');
          } catch (err) {
+            if (cancelled) return;
+
             setCareError(
                err instanceof Error
                   ? err.message
@@ -79,9 +89,15 @@ export function CareProvider({ children }: CareProviderProps) {
       };
 
       void loadOwners();
+
+      return () => {
+         cancelled = true;
+      };
    }, [isAuthenticated]);
 
    useEffect(() => {
+      let cancelled = false;
+
       if (!selectedCareOwnerId) {
          setCollaborators([]);
          return;
@@ -96,13 +112,28 @@ export function CareProvider({ children }: CareProviderProps) {
                },
             );
 
+            if (cancelled) return;
+
             setCollaborators(collaboratorsData);
-         } catch {
+            setCareError('');
+         } catch (err) {
+            if (cancelled) return;
+
             setCollaborators([]);
+
+            setCareError(
+               err instanceof Error
+                  ? err.message
+                  : 'Failed to load collaborators',
+            );
          }
       };
 
       void loadCollaborators();
+
+      return () => {
+         cancelled = true;
+      };
    }, [selectedCareOwnerId]);
 
    const addCollaborator = useCallback(async () => {
@@ -110,38 +141,54 @@ export function CareProvider({ children }: CareProviderProps) {
 
       if (!email || !selectedCareOwnerId) return;
 
-      const created = await apiRequest<Collaborator>(
-         '/care-team/collaborators',
-         {
-            method: 'POST',
-            auth: true,
-            body: JSON.stringify({
-               careOwnerId: selectedCareOwnerId,
-               email,
-            }),
-         },
-      );
+      try {
+         const created = await apiRequest<Collaborator>(
+            '/care-team/collaborators',
+            {
+               method: 'POST',
+               auth: true,
+               body: JSON.stringify({
+                  careOwnerId: selectedCareOwnerId,
+                  email,
+               }),
+            },
+         );
 
-      setCollaborators((prev) => {
-         const hasExisting = prev.some((item) => item.id === created.id);
+         setCollaborators((prev) => {
+            const hasExisting = prev.some((item) => item.id === created.id);
 
-         if (hasExisting) return prev;
-         return [...prev, created];
-      });
+            if (hasExisting) return prev;
+            return [...prev, created];
+         });
 
-      setCollaboratorEmail('');
+         setCollaboratorEmail('');
+         setCareError('');
+      } catch (err) {
+         setCareError(
+            err instanceof Error ? err.message : 'Failed to add collaborator',
+         );
+      }
    }, [collaboratorEmail, selectedCareOwnerId]);
 
    const deleteCollaborator = useCallback(
       async (id: string) => {
          if (!selectedCareOwnerId) return;
 
-         await apiRequest(`/care-team/collaborators/${id}`, {
-            method: 'DELETE',
-            auth: true,
-         });
+         try {
+            await apiRequest(`/care-team/collaborators/${id}`, {
+               method: 'DELETE',
+               auth: true,
+            });
 
-         setCollaborators((prev) => prev.filter((item) => item.id !== id));
+            setCollaborators((prev) => prev.filter((item) => item.id !== id));
+            setCareError('');
+         } catch (err) {
+            setCareError(
+               err instanceof Error
+                  ? err.message
+                  : 'Failed to delete collaborator',
+            );
+         }
       },
       [selectedCareOwnerId],
    );

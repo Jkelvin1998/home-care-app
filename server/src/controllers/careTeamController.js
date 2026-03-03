@@ -1,5 +1,6 @@
 import CareAccess from '../models/CareAccess.js';
 import User from '../models/User.js';
+import { resolveOwnerId } from '../utils/access.js';
 
 function normalizeOwner(user, relationship) {
    return {
@@ -68,12 +69,23 @@ export async function listCollaborators(req, res) {
 }
 
 export async function addCollaborator(req, res) {
-   const { email } = req.body;
+   const { email, careOwnerId } = req.body;
+   const objectIdPattern = /^[a-f\d]{24}$/i;
 
    if (!email) {
       return res
          .status(400)
          .json({ message: 'Collaborator email is required' });
+   }
+
+   if (careOwnerId && !objectIdPattern.test(String(careOwnerId))) {
+      return res.status(400).json({ message: 'Invalid careOwnerId' });
+   }
+
+   const ownerId = await resolveOwnerId(req);
+
+   if (!ownerId) {
+      return res.status(403).json({ message: 'Access denied for care owner' });
    }
 
    const collaborator = await User.findOne({ email: email.toLowerCase() });
@@ -84,7 +96,7 @@ export async function addCollaborator(req, res) {
          .json({ message: 'User with that email was not found' });
    }
 
-   if (collaborator._id.toString() === req.user.id) {
+   if (collaborator._id.toString() === ownerId) {
       return res
          .status(400)
          .json({ message: 'You cannot add yourself as collaborator' });
@@ -92,11 +104,11 @@ export async function addCollaborator(req, res) {
 
    const access = await CareAccess.findOneAndUpdate(
       {
-         ownerUserId: req.user.id,
+         ownerUserId: ownerId,
          collaboratorUserId: collaborator._id,
       },
       {
-         ownerUserId: req.user.id,
+         ownerUserId: ownerId,
          collaboratorUserId: collaborator._id,
          addedByUserId: req.user.id,
       },
