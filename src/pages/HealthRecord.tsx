@@ -24,7 +24,7 @@ import {
 type RecordSortKey = 'latest' | 'temperature' | 'oxygen' | 'pulse';
 
 export default function HealthRecord() {
-   const { selectedCareOwnerId } = useCare();
+   const { selectedCareOwnerId, careOwners, careError } = useCare();
    const [records, setRecords] = useState<Health[]>([]);
    const [members, setMembers] = useState<FamilyMember[]>([]);
    const [loading, setLoading] = useState(true);
@@ -103,7 +103,7 @@ export default function HealthRecord() {
          setMembers([]);
          setRecords([]);
          setSelectedMemberId('');
-         setLoading(false);
+         setLoading(careOwners.length === 0 && !careError);
          return;
       }
 
