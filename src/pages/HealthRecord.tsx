@@ -24,7 +24,7 @@ import {
 type RecordSortKey = 'latest' | 'temperature' | 'oxygen' | 'pulse';
 
 export default function HealthRecord() {
-   const { selectedCareOwnerId, careOwners, careError } = useCare();
+   const { selectedCareOwnerId, careError } = useCare();
    const [records, setRecords] = useState<Health[]>([]);
    const [members, setMembers] = useState<FamilyMember[]>([]);
    const [loading, setLoading] = useState(true);
@@ -103,7 +103,8 @@ export default function HealthRecord() {
          setMembers([]);
          setRecords([]);
          setSelectedMemberId('');
-         setLoading(careOwners.length === 0 && !careError);
+         setLoading(false);
+         setError(careError || '');
          return;
       }
 
@@ -154,7 +155,7 @@ export default function HealthRecord() {
       return () => {
          cancelled = true;
       };
-   }, [selectedCareOwnerId, careOwners.length, careError]);
+   }, [selectedCareOwnerId, careError]);
 
    // Handle modal accessibility: Escape key, focus management, and backdrop click
    useEffect(() => {
