@@ -112,7 +112,7 @@ export async function addCollaborator(req, res) {
          collaboratorUserId: collaborator._id,
          addedByUserId: req.user.id,
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
    );
 
    return res.status(201).json({

@@ -6,10 +6,11 @@ import {
    useLocation,
 } from 'react-router-dom';
 
-import Navbar from './components/ui/Navbar';
+import Sidebar from './components/ui/Sidebar';
 import Loading from './components/ui/Loading';
 
 import { useAuth, AuthProvider } from './context/AuthContext';
+import { CareProvider } from './context/CareContext';
 
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
@@ -20,17 +21,17 @@ import Signup from './pages/Signup';
 function AppLayout() {
    const location = useLocation();
    const { isAuthenticated, isAuthLoading } = useAuth();
-   const hideNavbar =
+   const hideSidebar =
       location.pathname === '/login' || location.pathname === '/signup';
 
    if (isAuthLoading) {
       return <Loading />;
    }
 
-   if (!hideNavbar && isAuthenticated) {
+   if (!hideSidebar && isAuthenticated) {
       return (
          <div className="flex min-h-screen bg-slate-100">
-            <Navbar />
+            <Sidebar />
 
             <main className="flex-1 p-4 md:p-6">
                <Routes>
@@ -69,7 +70,9 @@ export default function App() {
    return (
       <BrowserRouter>
          <AuthProvider>
-            <AppLayout />
+            <CareProvider>
+               <AppLayout />
+            </CareProvider>
          </AuthProvider>
       </BrowserRouter>
    );

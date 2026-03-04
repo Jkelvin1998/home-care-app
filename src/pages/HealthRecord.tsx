@@ -3,7 +3,7 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import doctorAnimationUrl from '../assets/lottie/doctor-animation.json';
 
 import { apiRequest } from '../lib/api';
-import { useAuth } from '../context/AuthContext';
+import { useCare } from '../context/CareContext';
 
 import type { FamilyMember, Health } from '../types/health';
 
@@ -23,33 +23,12 @@ import {
 
 type RecordSortKey = 'latest' | 'temperature' | 'oxygen' | 'pulse';
 
-type CareOwner = {
-   id: string;
-   name: string;
-   email: string;
-   relationship: 'owner' | 'shared';
-};
-
-type Collaborator = {
-   id: string;
-   userId: string;
-   name: string;
-   email: string;
-};
-
 export default function HealthRecord() {
-   const { user } = useAuth();
+   const { selectedCareOwnerId, careError } = useCare();
    const [records, setRecords] = useState<Health[]>([]);
    const [members, setMembers] = useState<FamilyMember[]>([]);
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState('');
-
-   const [careOwners, setCareOwners] = useState<CareOwner[]>([]);
-   const [selectedCareOwnerId, setSelectedCareOwnerId] = useState('');
-   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-   const [collaboratorEmail, setCollaboratorEmail] = useState('');
-   const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] =
-      useState(false);
 
    const [temperature, setTemperature] = useState<number>(36.5);
    const [oxygen, setOxygen] = useState<number>(95);
@@ -71,7 +50,6 @@ export default function HealthRecord() {
    const [recordSortBy, setRecordSortBy] = useState<RecordSortKey>('latest');
    const [colorBlindMode, setColorBlindMode] = useState(false);
    const modalRef = useRef<HTMLDivElement>(null);
-   const collaboratorModalRef = useRef<HTMLDivElement>(null);
 
    const parseSymptoms = (value: string) =>
       value
@@ -121,34 +99,15 @@ export default function HealthRecord() {
    }, [members]);
 
    useEffect(() => {
-      const loadOwners = async () => {
-         try {
-            const owners = await apiRequest<CareOwner[]>('/care-team/owners', {
-               auth: true,
-            });
+      if (!selectedCareOwnerId) {
+         setMembers([]);
+         setRecords([]);
+         setSelectedMemberId('');
+         setLoading(false);
+         setError('');
+         return;
+      }
 
-            setCareOwners(owners);
-
-            if (owners.length > 0) {
-               setSelectedCareOwnerId((prev) => prev || owners[0].id);
-            } else {
-               setLoading(false);
-            }
-         } catch (err) {
-            setError(
-               err instanceof Error
-                  ? err.message
-                  : 'Failed to load care owners',
-            );
-            setLoading(false);
-         }
-      };
-
-      loadOwners();
-   }, []);
-
-   useEffect(() => {
-      if (!selectedCareOwnerId) return;
       let cancelled = false;
 
       const load = async () => {
@@ -156,8 +115,8 @@ export default function HealthRecord() {
          setError('');
 
          try {
-            const careOwnerQuery = `?careOwnerId=${selectedCareOwnerId}`;
-            const collaboratorsQuery = `?ownerId=${selectedCareOwnerId}`;
+            const careOwnerQuery = `?careOwnerId=${encodeURIComponent(selectedCareOwnerId)}`;
+
             const [membersData, recordsData] = await Promise.all([
                apiRequest<FamilyMember[]>(`/members${careOwnerQuery}`, {
                   auth: true,
@@ -168,33 +127,20 @@ export default function HealthRecord() {
             ]);
 
             if (cancelled) return;
+
             setMembers(membersData);
             setRecords(recordsData);
 
-            try {
-               const collaboratorsData = await apiRequest<Collaborator[]>(
-                  `/care-team/collaborators${collaboratorsQuery}`,
-                  { auth: true },
-               );
-
-               if (cancelled) return;
-               setCollaborators(collaboratorsData);
-            } catch {
-               if (cancelled) return;
-               setCollaborators([]);
-            }
-
-            if (cancelled) return;
-            if (membersData.length > 0) {
-               setSelectedMemberId((prev) =>
-                  membersData.some((member) => member.id === prev)
-                     ? prev
-                     : membersData[0].id,
-               );
-            } else {
-               setSelectedMemberId('');
-            }
+            setSelectedMemberId((prev) =>
+               membersData.length === 0
+                  ? ''
+                  : membersData.some((member) => member.id === prev)
+                    ? prev
+                    : membersData[0].id,
+            );
          } catch (err) {
+            if (cancelled) return;
+
             setError(
                err instanceof Error
                   ? err.message
@@ -212,7 +158,12 @@ export default function HealthRecord() {
       };
    }, [selectedCareOwnerId]);
 
-   // Handle modal accessibility: Escape key, focus management, and backdrop click
+   useEffect(() => {
+      if (!selectedCareOwnerId) {
+         setError(careError || '');
+      }
+   }, [careError, selectedCareOwnerId]);
+
    useEffect(() => {
       if (!editingRecordId) return;
 
@@ -242,35 +193,6 @@ export default function HealthRecord() {
          document.removeEventListener('click', handleBackdropClick);
       };
    }, [editingRecordId]);
-
-   useEffect(() => {
-      if (!isCollaboratorModalOpen) return;
-
-      const handleKeyDown = (e: KeyboardEvent) => {
-         if (e.key === 'Escape') {
-            setIsCollaboratorModalOpen(false);
-         }
-      };
-
-      const handleBackdropClick = (e: MouseEvent) => {
-         if (collaboratorModalRef.current === e.target) {
-            setIsCollaboratorModalOpen(false);
-         }
-      };
-
-      const heading = collaboratorModalRef.current?.querySelector('h3');
-      if (heading && heading instanceof HTMLElement) {
-         heading.focus();
-      }
-
-      document.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('click', handleBackdropClick);
-
-      return () => {
-         document.removeEventListener('keydown', handleKeyDown);
-         document.removeEventListener('click', handleBackdropClick);
-      };
-   }, [isCollaboratorModalOpen]);
 
    const resetMemberForm = () => {
       setMemberName('');
@@ -496,51 +418,6 @@ export default function HealthRecord() {
       setAdditionalSymptomsInput('');
    };
 
-   // Add Collaborator and Delete Collaborator
-
-   const addCollaborator = async () => {
-      if (!collaboratorEmail.trim()) return;
-
-      try {
-         const created = await apiRequest<Collaborator>(
-            '/care-team/collaborators',
-            {
-               method: 'POST',
-               auth: true,
-               body: JSON.stringify({ email: collaboratorEmail.trim() }),
-            },
-         );
-
-         setCollaborators((prev) => {
-            if (prev.some((item) => item.id === created.id)) return prev;
-            return [created, ...prev];
-         });
-
-         setCollaboratorEmail('');
-      } catch (err) {
-         setError(
-            err instanceof Error ? err.message : 'Unable to add collaborator',
-         );
-      }
-   };
-
-   const deleteCollaborator = async (id: string) => {
-      try {
-         await apiRequest<void>(`/care-team/collaborators/${id}`, {
-            method: 'DELETE',
-            auth: true,
-         });
-
-         setCollaborators((prev) => prev.filter((item) => item.id !== id));
-      } catch (err) {
-         setError(
-            err instanceof Error
-               ? err.message
-               : 'Unable to remove collaborator',
-         );
-      }
-   };
-
    const selectedMember = selectedMemberId
       ? memberMap.get(selectedMemberId)
       : undefined;
@@ -621,43 +498,6 @@ export default function HealthRecord() {
          <h2 className="absolute -top-4 left-4 bg-slate-100 px-3 text-2xl font-semibold text-slate-900">
             Health Records
          </h2>
-
-         <section className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-2">
-            <label className="text-sm font-medium text-slate-700">
-               Care Account
-               <select
-                  value={selectedCareOwnerId}
-                  onChange={(event) =>
-                     setSelectedCareOwnerId(event.target.value)
-                  }
-                  className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
-               >
-                  {careOwners.map((owner) => (
-                     <option value={owner.id} key={owner.id}>
-                        {owner.name} (
-                        {owner.relationship === 'owner'
-                           ? 'My account'
-                           : 'Shared with me'}
-                        )
-                     </option>
-                  ))}
-               </select>
-            </label>
-
-            {selectedCareOwnerId === user?.id && (
-               <div>
-                  <p className="text-sm font-medium text-slate-700">
-                     Collaborators
-                  </p>
-                  <button
-                     onClick={() => setIsCollaboratorModalOpen(true)}
-                     className="mt-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
-                  >
-                     Manage Collaborators
-                  </button>
-               </div>
-            )}
-         </section>
 
          {error && (
             <p className="mt-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">
@@ -855,79 +695,6 @@ export default function HealthRecord() {
                />
             </div>
          </div>
-
-         {isCollaboratorModalOpen && (
-            <div
-               ref={collaboratorModalRef}
-               className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4"
-               role="dialog"
-               aria-modal="true"
-               aria-labelledby="collaborator-modal-title"
-            >
-               <div className="w-full max-w-2xl rounded-2xl bg-white p-5 shadow-2xl">
-                  <div className="mb-4 flex items-center justify-between">
-                     <h3
-                        id="collaborator-modal-title"
-                        tabIndex={-1}
-                        className="text-lg font-semibold text-slate-900"
-                     >
-                        Manage Collaborators
-                     </h3>
-                     <button
-                        onClick={() => setIsCollaboratorModalOpen(false)}
-                        aria-label="Close collaborator modal"
-                        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700"
-                     >
-                        X
-                     </button>
-                  </div>
-
-                  <div className="flex gap-2">
-                     <input
-                        type="email"
-                        value={collaboratorEmail}
-                        onChange={(event) =>
-                           setCollaboratorEmail(event.target.value)
-                        }
-                        placeholder="Email to invite"
-                        className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-                     />
-                     <button
-                        onClick={addCollaborator}
-                        className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
-                     >
-                        Add
-                     </button>
-                  </div>
-
-                  <ul className="mt-4 max-h-72 space-y-2 overflow-y-auto text-sm text-slate-700">
-                     {collaborators.length === 0 && (
-                        <li className="rounded-md bg-slate-50 px-3 py-2 text-slate-500">
-                           No collaborators yet.
-                        </li>
-                     )}
-
-                     {collaborators.map((item) => (
-                        <li
-                           key={item.id}
-                           className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2"
-                        >
-                           <span>
-                              {item.name} ({item.email})
-                           </span>
-
-                           <button
-                              onClick={() => deleteCollaborator(item.id)}
-                              className="text-rose-600 hover:underline"
-                           >
-                              Remove
-                           </button>
-                        </li>
-                     ))}
-                  </ul>
-               </div>
-            </div>
-         )}
 
          {editingRecordId && (
             <div

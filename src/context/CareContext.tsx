@@ -54,11 +54,6 @@ export function CareProvider({ children }: CareProviderProps) {
       let cancelled = false;
 
       if (!isAuthenticated) {
-         setCareOwners([]);
-         setSelectedCareOwnerId('');
-         setCollaborators([]);
-         setCollaboratorEmail('');
-         setCareError('');
          return;
       }
 
@@ -99,7 +94,6 @@ export function CareProvider({ children }: CareProviderProps) {
       let cancelled = false;
 
       if (!selectedCareOwnerId) {
-         setCollaborators([]);
          return;
       }
 
@@ -193,8 +187,18 @@ export function CareProvider({ children }: CareProviderProps) {
       [selectedCareOwnerId],
    );
 
-   const value = useMemo(
-      () => ({
+   useEffect(() => {
+      if (!isAuthenticated) {
+         setCareOwners([]);
+         setSelectedCareOwnerId('');
+         setCollaborators([]);
+         setCollaboratorEmail('');
+         setCareError('');
+      }
+   }, [isAuthenticated]);
+
+   const value = useMemo(() => {
+      return {
          careOwners,
          collaborators,
          selectedCareOwnerId,
@@ -204,17 +208,16 @@ export function CareProvider({ children }: CareProviderProps) {
          addCollaborator,
          deleteCollaborator,
          careError,
-      }),
-      [
-         careOwners,
-         collaborators,
-         selectedCareOwnerId,
-         collaboratorEmail,
-         addCollaborator,
-         deleteCollaborator,
-         careError,
-      ],
-   );
+      };
+   }, [
+      careOwners,
+      selectedCareOwnerId,
+      collaborators,
+      collaboratorEmail,
+      careError,
+      addCollaborator,
+      deleteCollaborator,
+   ]);
 
    return <CareContext.Provider value={value}>{children}</CareContext.Provider>;
 }
