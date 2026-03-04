@@ -187,16 +187,6 @@ export function CareProvider({ children }: CareProviderProps) {
       [selectedCareOwnerId],
    );
 
-   useEffect(() => {
-      if (!isAuthenticated) {
-         setCareOwners([]);
-         setSelectedCareOwnerId('');
-         setCollaborators([]);
-         setCollaboratorEmail('');
-         setCareError('');
-      }
-   }, [isAuthenticated]);
-
    const value = useMemo(() => {
       return {
          careOwners,
