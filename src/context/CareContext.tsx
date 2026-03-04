@@ -187,44 +187,37 @@ export function CareProvider({ children }: CareProviderProps) {
       [selectedCareOwnerId],
    );
 
-   const value = useMemo(
-      () => {
-         const resolvedCareOwners = isAuthenticated ? careOwners : [];
-         const resolvedSelectedCareOwnerId = isAuthenticated
-            ? selectedCareOwnerId
-            : '';
-         const resolvedCollaborators =
-            isAuthenticated && resolvedSelectedCareOwnerId
-               ? collaborators
-               : [];
-         const resolvedCollaboratorEmail = isAuthenticated
-            ? collaboratorEmail
-            : '';
-         const resolvedCareError = isAuthenticated ? careError : '';
+   useEffect(() => {
+      if (!isAuthenticated) {
+         setCareOwners([]);
+         setSelectedCareOwnerId('');
+         setCollaborators([]);
+         setCollaboratorEmail('');
+         setCareError('');
+      }
+   }, [isAuthenticated]);
 
-         return {
-            careOwners: resolvedCareOwners,
-            collaborators: resolvedCollaborators,
-            selectedCareOwnerId: resolvedSelectedCareOwnerId,
-            setSelectedCareOwnerId,
-            collaboratorEmail: resolvedCollaboratorEmail,
-            setCollaboratorEmail,
-            addCollaborator,
-            deleteCollaborator,
-            careError: resolvedCareError,
-         };
-      },
-      [
-         isAuthenticated,
+   const value = useMemo(() => {
+      return {
          careOwners,
-         selectedCareOwnerId,
          collaborators,
+         selectedCareOwnerId,
+         setSelectedCareOwnerId,
          collaboratorEmail,
-         careError,
+         setCollaboratorEmail,
          addCollaborator,
          deleteCollaborator,
-      ],
-   );
+         careError,
+      };
+   }, [
+      careOwners,
+      selectedCareOwnerId,
+      collaborators,
+      collaboratorEmail,
+      careError,
+      addCollaborator,
+      deleteCollaborator,
+   ]);
 
    return <CareContext.Provider value={value}>{children}</CareContext.Provider>;
 }
