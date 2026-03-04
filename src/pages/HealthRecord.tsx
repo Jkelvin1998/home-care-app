@@ -154,7 +154,7 @@ export default function HealthRecord() {
       return () => {
          cancelled = true;
       };
-   }, [selectedCareOwnerId]);
+   }, [selectedCareOwnerId, careOwners.length, careError]);
 
    // Handle modal accessibility: Escape key, focus management, and backdrop click
    useEffect(() => {
