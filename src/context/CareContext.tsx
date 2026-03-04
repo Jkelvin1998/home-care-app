@@ -54,11 +54,6 @@ export function CareProvider({ children }: CareProviderProps) {
       let cancelled = false;
 
       if (!isAuthenticated) {
-         setCareOwners([]);
-         setSelectedCareOwnerId('');
-         setCollaborators([]);
-         setCollaboratorEmail('');
-         setCareError('');
          return;
       }
 
@@ -99,7 +94,6 @@ export function CareProvider({ children }: CareProviderProps) {
       let cancelled = false;
 
       if (!selectedCareOwnerId) {
-         setCollaborators([]);
          return;
       }
 
@@ -194,25 +188,41 @@ export function CareProvider({ children }: CareProviderProps) {
    );
 
    const value = useMemo(
-      () => ({
-         careOwners,
-         collaborators,
-         selectedCareOwnerId,
-         setSelectedCareOwnerId,
-         collaboratorEmail,
-         setCollaboratorEmail,
-         addCollaborator,
-         deleteCollaborator,
-         careError,
-      }),
+      () => {
+         const resolvedCareOwners = isAuthenticated ? careOwners : [];
+         const resolvedSelectedCareOwnerId = isAuthenticated
+            ? selectedCareOwnerId
+            : '';
+         const resolvedCollaborators =
+            isAuthenticated && resolvedSelectedCareOwnerId
+               ? collaborators
+               : [];
+         const resolvedCollaboratorEmail = isAuthenticated
+            ? collaboratorEmail
+            : '';
+         const resolvedCareError = isAuthenticated ? careError : '';
+
+         return {
+            careOwners: resolvedCareOwners,
+            collaborators: resolvedCollaborators,
+            selectedCareOwnerId: resolvedSelectedCareOwnerId,
+            setSelectedCareOwnerId,
+            collaboratorEmail: resolvedCollaboratorEmail,
+            setCollaboratorEmail,
+            addCollaborator,
+            deleteCollaborator,
+            careError: resolvedCareError,
+         };
+      },
       [
+         isAuthenticated,
          careOwners,
-         collaborators,
          selectedCareOwnerId,
+         collaborators,
          collaboratorEmail,
+         careError,
          addCollaborator,
          deleteCollaborator,
-         careError,
       ],
    );
 

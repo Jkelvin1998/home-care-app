@@ -55,7 +55,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const existingToken = getAuthToken();
 
       if (!existingToken) {
-         setIsAuthLoading(false);
          return;
       }
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -35,16 +35,17 @@ export default function Sidebar() {
    const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] =
       useState(false);
 
-   const userInitials = useMemo(() => {
-      if (!user?.name) return 'U';
+   const userInitials = (() => {
+      const name = user?.name?.trim();
+      if (!name) return 'U';
 
-      return user.name
+      return name
          .split(' ')
          .filter(Boolean)
          .slice(0, 2)
-         .map((namePart) => namePart[0]?.toUpperCase() ?? '')
+         .map((part) => part[0]?.toUpperCase() ?? '')
          .join('');
-   }, [user?.name]);
+   })();
 
    return (
       <aside

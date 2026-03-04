@@ -104,7 +104,7 @@ export default function HealthRecord() {
          setRecords([]);
          setSelectedMemberId('');
          setLoading(false);
-         setError(careError || '');
+         setError('');
          return;
       }
 
@@ -115,7 +115,8 @@ export default function HealthRecord() {
          setError('');
 
          try {
-            const careOwnerQuery = `?careOwnerId=${selectedCareOwnerId}`;
+            const careOwnerQuery = `?careOwnerId=${encodeURIComponent(selectedCareOwnerId)}`;
+
             const [membersData, recordsData] = await Promise.all([
                apiRequest<FamilyMember[]>(`/members${careOwnerQuery}`, {
                   auth: true,
@@ -126,20 +127,20 @@ export default function HealthRecord() {
             ]);
 
             if (cancelled) return;
+
             setMembers(membersData);
             setRecords(recordsData);
 
-            if (cancelled) return;
-            if (membersData.length > 0) {
-               setSelectedMemberId((prev) =>
-                  membersData.some((member) => member.id === prev)
-                     ? prev
-                     : membersData[0].id,
-               );
-            } else {
-               setSelectedMemberId('');
-            }
+            setSelectedMemberId((prev) =>
+               membersData.length === 0
+                  ? ''
+                  : membersData.some((member) => member.id === prev)
+                    ? prev
+                    : membersData[0].id,
+            );
          } catch (err) {
+            if (cancelled) return;
+
             setError(
                err instanceof Error
                   ? err.message
@@ -155,9 +156,14 @@ export default function HealthRecord() {
       return () => {
          cancelled = true;
       };
-   }, [selectedCareOwnerId, careError]);
+   }, [selectedCareOwnerId]);
 
-   // Handle modal accessibility: Escape key, focus management, and backdrop click
+   useEffect(() => {
+      if (!selectedCareOwnerId) {
+         setError(careError || '');
+      }
+   }, [careError, selectedCareOwnerId]);
+
    useEffect(() => {
       if (!editingRecordId) return;
 
