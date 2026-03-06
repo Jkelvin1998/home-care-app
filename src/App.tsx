@@ -5,18 +5,20 @@ import {
    Navigate,
    useLocation,
 } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 
 import Sidebar from './components/ui/Sidebar';
+import TopNavbar from './components/ui/TopNavbar';
 import Loading from './components/ui/Loading';
 
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { CareProvider } from './context/CareContext';
 
-import Dashboard from './pages/Dashboard';
-import Inventory from './pages/Inventory';
-import HealthRecord from './pages/HealthRecord';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Inventory = lazy(() => import('./pages/Inventory'));
+const HealthRecord = lazy(() => import('./pages/HealthRecord'));
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
 
 function AppLayout() {
    const location = useLocation();
@@ -33,36 +35,50 @@ function AppLayout() {
          <div className="flex min-h-screen bg-slate-100">
             <Sidebar />
 
-            <main className="flex-1 p-4 md:p-6">
-               <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/inventory" element={<Inventory />} />
-                  <Route path="/health-record" element={<HealthRecord />} />
-                  <Route path="*" element={<Navigate to={'/'} replace />} />
-               </Routes>
-            </main>
+            <div className="flex min-w-0 flex-1 flex-col">
+               <TopNavbar />
+
+               <main className="flex-1 p-4 md:p-6">
+                  <Suspense fallback={<Loading />}>
+                     <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/inventory" element={<Inventory />} />
+                        <Route
+                           path="/health-record"
+                           element={<HealthRecord />}
+                        />
+                        <Route
+                           path="*"
+                           element={<Navigate to={'/'} replace />}
+                        />
+                     </Routes>
+                  </Suspense>
+               </main>
+            </div>
          </div>
       );
    }
 
    return (
-      <Routes>
-         <Route
-            path="/login"
-            element={
-               isAuthenticated ? <Navigate to={'/'} replace /> : <Login />
-            }
-         />
+      <Suspense fallback={<Loading />}>
+         <Routes>
+            <Route
+               path="/login"
+               element={
+                  isAuthenticated ? <Navigate to={'/'} replace /> : <Login />
+               }
+            />
 
-         <Route
-            path="/signup"
-            element={
-               isAuthenticated ? <Navigate to={'/'} replace /> : <Signup />
-            }
-         />
+            <Route
+               path="/signup"
+               element={
+                  isAuthenticated ? <Navigate to={'/'} replace /> : <Signup />
+               }
+            />
 
-         <Route path="*" element={<Navigate to={'/login'} replace />} />
-      </Routes>
+            <Route path="*" element={<Navigate to={'/login'} replace />} />
+         </Routes>
+      </Suspense>
    );
 }
 
