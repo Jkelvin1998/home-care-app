@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { useAuth } from '../../context/AuthContext';
@@ -21,14 +21,25 @@ export default function TopNavbar() {
    const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] =
       useState(false);
 
+   useEffect(() => {
+      if (!isCollaboratorModalOpen) return;
+
+      const onKeyDown = (e: KeyboardEvent) => {
+         if (e.key === 'Escape') setIsCollaboratorModalOpen(false);
+      };
+
+      document.addEventListener('keydown', onKeyDown);
+      return () => document.removeEventListener('keydown', onKeyDown);
+   }, [isCollaboratorModalOpen]);
+
    return (
       <>
-         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 py-3 shadow-sm mr-2 md:px-6">
+         <header className="sticky top-0 z-30 border-b border-slate-200 bg-slate-900 rounded-b-xl px-4 py-3 shadow-sm mr-2 md:px-6">
             <div className="flex items-center justify-center">
                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                   <label
                      htmlFor="care-account"
-                     className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-500 sm:pb-2"
+                     className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-100 sm:pb-2"
                   >
                      Care Account
                   </label>
@@ -71,13 +82,22 @@ export default function TopNavbar() {
 
          {isCollaboratorModalOpen &&
             createPortal(
-               <div className="fixed inset-0 z-1000 flex items-center justify-center bg-slate-900/60 p-4">
+               <div
+                  className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/60 p-4"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="collaborator-modal-title"
+                  onClick={() => setIsCollaboratorModalOpen(false)}
+               >
                   <div
                      className="w-full max-w-lg rounded-2xl bg-white p-5 text-slate-900 shadow-2xl"
                      onClick={(event) => event.stopPropagation()}
                   >
                      <div className="mb-4 flex items-center justify-between">
-                        <h4 className="text-lg font-semibold">
+                        <h4
+                           id="collaborator-modal-title"
+                           className="text-lg font-semibold"
+                        >
                            Manage Collaborators
                         </h4>
 
