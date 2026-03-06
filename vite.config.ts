@@ -5,9 +5,16 @@ import tailwindcss from '@tailwindcss/vite';
 // https://vite.dev/config/
 export default defineConfig({
    plugins: [react(), tailwindcss()],
-   // server: {
-   //    headers: {
-   //       'Content-Security-Policy': "default-src 'none'",
-   //    },
-   // },
+   build: {
+      rollupOptions: {
+         output: {
+            manualChunks: {
+               react: ['react', 'react-dom', 'react-router-dom'],
+               mui: ['@mui/material', '@emotion/react', '@emotion/styled'],
+               charts: ['@mui/x-charts'],
+               lottie: ['@lottiefiles/dotlottie-react'],
+            },
+         },
+      },
+   },
 });
