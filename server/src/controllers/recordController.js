@@ -53,6 +53,19 @@ async function createHistoryEntry({ record, action, actor }) {
    });
 }
 
+async function createHistoryEntryBestEffort({ record, action, actor }) {
+   try {
+      await createHistoryEntry({ record, action, actor });
+   } catch (error) {
+      console.error('Failed to write record history', {
+         action,
+         recordId: record?._id?.toString?.(),
+         actorId: actor?._id?.toString?.(),
+         error: error instanceof Error ? error.message : String(error),
+      });
+   }
+}
+
 export async function listRecords(req, res) {
    const { memberId } = req.query;
 
@@ -124,7 +137,7 @@ export async function createRecord(req, res) {
    const actor = await User.findById(req.user.id).select('_id name');
 
    if (actor) {
-      await createHistoryEntry({
+      await createHistoryEntryBestEffort({
          record,
          action: 'created',
          actor,
@@ -168,7 +181,7 @@ export async function updateRecord(req, res) {
    const actor = await User.findById(req.user.id).select('_id name');
 
    if (actor) {
-      await createHistoryEntry({
+      await createHistoryEntryBestEffort({
          record,
          action: 'updated',
          actor,
@@ -192,17 +205,17 @@ export async function deleteRecord(req, res) {
       return res.status(403).json({ message: 'Access denied for record' });
    }
 
+   await record.deleteOne();
+
    const actor = await User.findById(req.user.id).select('_id name');
 
    if (actor) {
-      await createHistoryEntry({
+      await createHistoryEntryBestEffort({
          record,
          action: 'deleted',
          actor,
       });
    }
-
-   await record.deleteOne();
 
    return res.status(204).send();
 }
