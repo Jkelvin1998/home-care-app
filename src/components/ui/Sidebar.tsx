@@ -8,8 +8,6 @@ import { RiHealthBookLine } from 'react-icons/ri';
 import { IoMenu } from 'react-icons/io5';
 import { MdLogout } from 'react-icons/md';
 
-import Logo from '../../assets/logo-dark.png';
-
 const navigationItems = [
    { label: 'Dashboard', icon: MdDashboard, to: '/' },
    { label: 'Inventory', icon: MdInventory, to: '/inventory' },
@@ -39,20 +37,6 @@ export default function Sidebar() {
          className={`sticky top-2 m-2 flex h-[calc(100vh-1rem)] flex-col justify-between overflow-hidden rounded-xl bg-slate-900 px-3 py-4 text-white transition-[width] duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-72'}`}
       >
          <div className="space-y-4">
-            <div className="flex items-center overflow-hidden rounded-md">
-               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white">
-                  <img
-                     src={Logo}
-                     alt="Home Care App logo"
-                     className="h-8 w-8 object-contain"
-                  />
-               </div>
-               <span
-                  className={`ml-3 whitespace-nowrap text-sm font-semibold text-white transition-all duration-200 ${isCollapsed ? 'max-w-0 -translate-x-1 opacity-0' : 'max-w-40 translate-x-0 opacity-100'}`}
-               >
-                  Home Care App
-               </span>
-            </div>
             <button
                type="button"
                onClick={() => setIsCollapsed((prev) => !prev)}
