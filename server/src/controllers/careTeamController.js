@@ -32,24 +32,23 @@ export async function listCareOwners(req, res) {
 }
 
 export async function listCollaborators(req, res) {
-   const ownerId = req.query.ownerId || req.user.id;
-   const objectIdPattern = /^[a-f\d]{24}$/i;
-
-   if (req.query.ownerId && !objectIdPattern.test(String(req.query.ownerId))) {
-      return res.status(400).json({ message: 'Invalid ownerId' });
+   if (req.query.ownerId && !req.query.careOwnerId) {
+      req.query.careOwnerId = req.query.ownerId;
    }
 
-   if (ownerId !== req.user.id) {
-      const access = await CareAccess.findOne({
-         ownerUserId: ownerId,
-         collaboratorUserId: req.user.id,
-      }).select('_id');
+   const objectIdPattern = /^[a-f\d]{24}$/i;
 
-      if (!access) {
-         return res
-            .status(403)
-            .json({ message: 'Access denied for care team' });
-      }
+   if (
+      req.query.careOwnerId &&
+      !objectIdPattern.test(String(req.query.careOwnerId))
+   ) {
+      return res.status(400).json({ message: 'Invalid careOwnerId' });
+   }
+
+   const ownerId = await resolveOwnerId(req);
+
+   if (!ownerId) {
+      return res.status(403).json({ message: 'Access denied for care owner' });
    }
 
    const accesses = await CareAccess.find({ ownerUserId: ownerId })

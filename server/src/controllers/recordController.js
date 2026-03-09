@@ -1,5 +1,7 @@
 import FamilyMember from '../models/FamilyMember.js';
 import HealthRecord from '../models/HealthRecord.js';
+import User from '../models/User.js';
+import RecordHistory from '../models/RecordHistory.js';
 import { canAccessOwner, resolveOwnerId } from '../utils/access.js';
 
 function normalize(record) {
@@ -12,6 +14,43 @@ function normalize(record) {
       pulseRate: record.pulseRate,
       symptoms: record.symptoms ?? [],
    };
+}
+
+function normalizeHistoryEntry(entry) {
+   return {
+      id: entry._id.toString(),
+      memberId: entry.memberId.toString(),
+      recordId: entry.recordId.toString(),
+      action: entry.action,
+      actorId: entry.actorId.toString(),
+      actorName: entry.actorName,
+      snapshot: {
+         savedAt: entry.snapshot.savedAt,
+         temperature: entry.snapshot.temperature,
+         oxygen: entry.snapshot.oxygen,
+         pulseRate: entry.snapshot.pulseRate,
+         symptoms: entry.snapshot.symptoms ?? [],
+      },
+      changedAt: entry.createdAt.toString(),
+   };
+}
+
+async function createHistoryEntry({ record, action, actor }) {
+   await RecordHistory.create({
+      userId: record.userId,
+      memberId: record.memberId,
+      recordId: record._id,
+      action,
+      actorId: actor._id,
+      actorName: actor.name,
+      snapshot: {
+         savedAt: record.savedAt,
+         temperature: record.temperature,
+         oxygen: record.oxygen,
+         pulseRate: record.pulseRate,
+         symptoms: record.symptoms ?? [],
+      },
+   });
 }
 
 export async function listRecords(req, res) {
@@ -29,6 +68,26 @@ export async function listRecords(req, res) {
 
    const records = await HealthRecord.find(query).sort({ savedAt: -1 });
    return res.json(records.map(normalize));
+}
+
+export async function listRecordHistory(req, res) {
+   const { memberId } = req.query;
+
+   const ownerId = await resolveOwnerId(req);
+
+   if (!ownerId) {
+      return res.status(403).json({ message: 'Access denied for care owner' });
+   }
+
+   const query = { userId: ownerId };
+
+   if (memberId) query.memberId = memberId;
+
+   const historyEntries = await RecordHistory.find(query).sort({
+      createdAt: -1,
+   });
+
+   return res.json(historyEntries.map(normalizeHistoryEntry));
 }
 
 export async function createRecord(req, res) {
@@ -61,6 +120,16 @@ export async function createRecord(req, res) {
       pulseRate,
       symptoms: symptoms ?? [],
    });
+
+   const actor = await User.findById(req.user.id).select('_id name');
+
+   if (actor) {
+      await createHistoryEntry({
+         record,
+         action: 'created',
+         actor,
+      });
+   }
 
    return res.status(201).json(normalize(record));
 }
@@ -96,6 +165,16 @@ export async function updateRecord(req, res) {
    if (symptoms !== undefined) record.symptoms = symptoms;
    await record.save();
 
+   const actor = await User.findById(req.user.id).select('_id name');
+
+   if (actor) {
+      await createHistoryEntry({
+         record,
+         action: 'updated',
+         actor,
+      });
+   }
+
    return res.json(normalize(record));
 }
 
@@ -111,6 +190,16 @@ export async function deleteRecord(req, res) {
 
    if (!allowed) {
       return res.status(403).json({ message: 'Access denied for record' });
+   }
+
+   const actor = await User.findById(req.user.id).select('_id name');
+
+   if (actor) {
+      await createHistoryEntry({
+         record,
+         action: 'deleted',
+         actor,
+      });
    }
 
    await record.deleteOne();

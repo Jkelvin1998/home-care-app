@@ -100,7 +100,7 @@ export function CareProvider({ children }: CareProviderProps) {
       const loadCollaborators = async () => {
          try {
             const collaboratorsData = await apiRequest<Collaborator[]>(
-               `/care-team/collaborators?ownerId=${selectedCareOwnerId}`,
+               `/care-team/collaborators?careOwnerId=${encodeURIComponent(selectedCareOwnerId)}`,
                {
                   auth: true,
                },
