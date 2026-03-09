@@ -31,36 +31,34 @@ function normalizeHistoryEntry(entry) {
          pulseRate: entry.snapshot.pulseRate,
          symptoms: entry.snapshot.symptoms ?? [],
       },
-      changedAt: entry.createdAt.toString(),
+      changedAt: entry.createdAt.toISOString(),
    };
 }
 
-async function createHistoryEntry({ record, action, actor }) {
-   await RecordHistory.create({
-      userId: record.userId,
-      memberId: record.memberId,
-      recordId: record._id,
-      action,
-      actorId: actor._id,
-      actorName: actor.name,
-      snapshot: {
-         savedAt: record.savedAt,
-         temperature: record.temperature,
-         oxygen: record.oxygen,
-         pulseRate: record.pulseRate,
-         symptoms: record.symptoms ?? [],
-      },
-   });
-}
-
-async function createHistoryEntryBestEffort({ record, action, actor }) {
+async function createHistoryEntryBestEffort({ record, action, actorUserId }) {
    try {
-      await createHistoryEntry({ record, action, actor });
+      const actor = await User.findById(actorUserId).select('_id name');
+
+      await RecordHistory.create({
+         userId: record.userId,
+         memberId: record.memberId,
+         recordId: record._id,
+         action,
+         actorId: actor?._id ?? actorUserId,
+         actorName: actor?.name ?? 'Unknown User',
+         snapshot: {
+            savedAt: record.savedAt,
+            temperature: record.temperature,
+            oxygen: record.oxygen,
+            pulseRate: record.pulseRate,
+            symptoms: record.symptoms ?? [],
+         },
+      });
    } catch (error) {
       console.error('Failed to write record history', {
          action,
          recordId: record?._id?.toString?.(),
-         actorId: actor?._id?.toString?.(),
+         actorId: actorUserId,
          error: error instanceof Error ? error.message : String(error),
       });
    }
@@ -134,15 +132,11 @@ export async function createRecord(req, res) {
       symptoms: symptoms ?? [],
    });
 
-   const actor = await User.findById(req.user.id).select('_id name');
-
-   if (actor) {
-      await createHistoryEntryBestEffort({
-         record,
-         action: 'created',
-         actor,
-      });
-   }
+   await createHistoryEntryBestEffort({
+      record,
+      action: 'created',
+      actorUserId: req.user.id,
+   });
 
    return res.status(201).json(normalize(record));
 }
@@ -178,15 +172,11 @@ export async function updateRecord(req, res) {
    if (symptoms !== undefined) record.symptoms = symptoms;
    await record.save();
 
-   const actor = await User.findById(req.user.id).select('_id name');
-
-   if (actor) {
-      await createHistoryEntryBestEffort({
-         record,
-         action: 'updated',
-         actor,
-      });
-   }
+   await createHistoryEntryBestEffort({
+      record,
+      action: 'updated',
+      actorUserId: req.user.id,
+   });
 
    return res.json(normalize(record));
 }
@@ -207,15 +197,11 @@ export async function deleteRecord(req, res) {
 
    await record.deleteOne();
 
-   const actor = await User.findById(req.user.id).select('_id name');
-
-   if (actor) {
-      await createHistoryEntryBestEffort({
-         record,
-         action: 'deleted',
-         actor,
-      });
-   }
+   await createHistoryEntryBestEffort({
+      record,
+      action: 'deleted',
+      actorUserId: req.user.id,
+   });
 
    return res.status(204).send();
 }
