@@ -17,3 +17,20 @@ export type FamilyMember = {
    heightCm: number;
    profileImage?: string;
 };
+
+export type HealthRecordHistory = {
+   id: string;
+   memberId: string;
+   recordId: string;
+   action: 'created' | 'updated' | 'deleted';
+   actorId: string;
+   actorName: string;
+   changedAt: string;
+   snapshot: {
+      savedAt: string;
+      temperature: number;
+      oxygen: number;
+      pulseRate: number;
+      symptoms: string[];
+   };
+};

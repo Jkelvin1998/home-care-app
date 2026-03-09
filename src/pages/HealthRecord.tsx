@@ -5,7 +5,11 @@ import doctorAnimationUrl from '../assets/lottie/doctor-animation.json';
 import { apiRequest } from '../lib/api';
 import { useCare } from '../context/CareContext';
 
-import type { FamilyMember, Health } from '../types/health';
+import type {
+   FamilyMember,
+   Health,
+   HealthRecordHistory,
+} from '../types/health';
 
 import HealthMetricsForm from '../components/HealthRecord/HealthMetricsForm';
 import HealthRecordsTable from '../components/HealthRecord/HealthRecordsTable';
@@ -27,6 +31,10 @@ export default function HealthRecord() {
    const { selectedCareOwnerId, careError } = useCare();
    const [records, setRecords] = useState<Health[]>([]);
    const [members, setMembers] = useState<FamilyMember[]>([]);
+   const [recordHistory, setRecordHistory] = useState<HealthRecordHistory[]>(
+      [],
+   );
+
    const [loading, setLoading] = useState(true);
    const [error, setError] = useState('');
 
@@ -58,6 +66,23 @@ export default function HealthRecord() {
          .filter(Boolean);
 
    const dedupeSymptoms = (symptoms: string[]) => Array.from(new Set(symptoms));
+
+   const loadRecordHistory = async (careOwnerId: string) => {
+      const careOwnerQuery = `?careOwnerId=${encodeURIComponent(careOwnerId)}`;
+      try {
+         const historyData = await apiRequest<HealthRecordHistory[]>(
+            `/records/history${careOwnerQuery}`,
+            {
+               auth: true,
+            },
+         );
+
+         setRecordHistory(historyData);
+      } catch (err) {
+         console.warn('Failed to load record history', err);
+         setRecordHistory([]);
+      }
+   };
 
    const getAutoDetectedSymptoms = (
       currentTemperature: number,
@@ -102,6 +127,7 @@ export default function HealthRecord() {
       if (!selectedCareOwnerId) {
          setMembers([]);
          setRecords([]);
+         setRecordHistory([]);
          setSelectedMemberId('');
          setLoading(false);
          setError('');
@@ -117,12 +143,21 @@ export default function HealthRecord() {
          try {
             const careOwnerQuery = `?careOwnerId=${encodeURIComponent(selectedCareOwnerId)}`;
 
-            const [membersData, recordsData] = await Promise.all([
+            const [membersData, recordsData, historyData] = await Promise.all([
                apiRequest<FamilyMember[]>(`/members${careOwnerQuery}`, {
                   auth: true,
                }),
                apiRequest<Health[]>(`/records${careOwnerQuery}`, {
                   auth: true,
+               }),
+               apiRequest<HealthRecordHistory[]>(
+                  `/records/history${careOwnerQuery}`,
+                  {
+                     auth: true,
+                  },
+               ).catch((err) => {
+                  console.warn('Failed to load record history', err);
+                  return [];
                }),
             ]);
 
@@ -130,6 +165,7 @@ export default function HealthRecord() {
 
             setMembers(membersData);
             setRecords(recordsData);
+            setRecordHistory(historyData);
 
             setSelectedMemberId((prev) =>
                membersData.length === 0
@@ -297,6 +333,9 @@ export default function HealthRecord() {
          setRecords((prev) =>
             prev.filter((record) => record.memberId !== selectedMemberId),
          );
+         setRecordHistory((prev) =>
+            prev.filter((entry) => entry.memberId !== selectedMemberId),
+         );
 
          setSelectedMemberId('');
          setEditingRecordId(null);
@@ -360,6 +399,10 @@ export default function HealthRecord() {
             setRecords((prev) => [created, ...prev]);
          }
 
+         if (selectedCareOwnerId) {
+            await loadRecordHistory(selectedCareOwnerId);
+         }
+
          setAdditionalSymptomsInput('');
       } catch (err) {
          setError(err instanceof Error ? err.message : 'Unable to save record');
@@ -402,6 +445,10 @@ export default function HealthRecord() {
 
          setRecords((prev) => prev.filter((r) => r.id !== recordId));
 
+         if (selectedCareOwnerId) {
+            await loadRecordHistory(selectedCareOwnerId);
+         }
+
          if (editingRecordId === recordId) {
             setEditingRecordId(null);
             setAdditionalSymptomsInput('');
@@ -421,6 +468,14 @@ export default function HealthRecord() {
    const selectedMember = selectedMemberId
       ? memberMap.get(selectedMemberId)
       : undefined;
+
+   const filteredHistory = useMemo(() => {
+      if (!selectedMemberId) return recordHistory;
+
+      return recordHistory.filter(
+         (entry) => entry.memberId === selectedMemberId,
+      );
+   }, [recordHistory, selectedMemberId]);
 
    const selectedMemberAge = selectedMember
       ? getAge(selectedMember.dateOfBirth)
@@ -693,6 +748,38 @@ export default function HealthRecord() {
                   onDeleteRecord={deleteRecord}
                   colorBlindMode={colorBlindMode}
                />
+
+               <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                     Activity History
+                  </h3>
+                  <p>Track who created, updated, or deleted health records.</p>
+
+                  <ul className="mt-4 space-y-3">
+                     {filteredHistory.length === 0 ? (
+                        <li className="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">
+                           No history yet.
+                        </li>
+                     ) : (
+                        filteredHistory.map((entry) => (
+                           <li
+                              key={entry.id}
+                              className="rounded-lg border  border-slate-200 p-3"
+                           >
+                              <p className="text-sm font-semibold text-slate-800">
+                                 {entry.actorName} {entry.action} a record.
+                              </p>
+                              <p className="mt-1 text-xs text-slate-500">
+                                 {new Date(entry.changedAt).toLocaleString()} •
+                                 Temp {entry.snapshot.temperature} °C • O₂{' '}
+                                 {entry.snapshot.oxygen}% • Pulse{' '}
+                                 {entry.snapshot.pulseRate} bpm
+                              </p>
+                           </li>
+                        ))
+                     )}
+                  </ul>
+               </div>
             </div>
          </div>
 

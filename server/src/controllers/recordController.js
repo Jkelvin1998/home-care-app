@@ -1,5 +1,7 @@
 import FamilyMember from '../models/FamilyMember.js';
 import HealthRecord from '../models/HealthRecord.js';
+import User from '../models/User.js';
+import RecordHistory from '../models/RecordHistory.js';
 import { canAccessOwner, resolveOwnerId } from '../utils/access.js';
 
 function normalize(record) {
@@ -12,6 +14,54 @@ function normalize(record) {
       pulseRate: record.pulseRate,
       symptoms: record.symptoms ?? [],
    };
+}
+
+function normalizeHistoryEntry(entry) {
+   return {
+      id: entry._id.toString(),
+      memberId: entry.memberId.toString(),
+      recordId: entry.recordId.toString(),
+      action: entry.action,
+      actorId: entry.actorId.toString(),
+      actorName: entry.actorName,
+      snapshot: {
+         savedAt: entry.snapshot.savedAt,
+         temperature: entry.snapshot.temperature,
+         oxygen: entry.snapshot.oxygen,
+         pulseRate: entry.snapshot.pulseRate,
+         symptoms: entry.snapshot.symptoms ?? [],
+      },
+      changedAt: entry.createdAt.toISOString(),
+   };
+}
+
+async function createHistoryEntryBestEffort({ record, action, actorUserId }) {
+   try {
+      const actor = await User.findById(actorUserId).select('_id name');
+
+      await RecordHistory.create({
+         userId: record.userId,
+         memberId: record.memberId,
+         recordId: record._id,
+         action,
+         actorId: actor?._id ?? actorUserId,
+         actorName: actor?.name ?? 'Unknown User',
+         snapshot: {
+            savedAt: record.savedAt,
+            temperature: record.temperature,
+            oxygen: record.oxygen,
+            pulseRate: record.pulseRate,
+            symptoms: record.symptoms ?? [],
+         },
+      });
+   } catch (error) {
+      console.error('Failed to write record history', {
+         action,
+         recordId: record?._id?.toString?.(),
+         actorId: actorUserId,
+         error: error instanceof Error ? error.message : String(error),
+      });
+   }
 }
 
 export async function listRecords(req, res) {
@@ -29,6 +79,26 @@ export async function listRecords(req, res) {
 
    const records = await HealthRecord.find(query).sort({ savedAt: -1 });
    return res.json(records.map(normalize));
+}
+
+export async function listRecordHistory(req, res) {
+   const { memberId } = req.query;
+
+   const ownerId = await resolveOwnerId(req);
+
+   if (!ownerId) {
+      return res.status(403).json({ message: 'Access denied for care owner' });
+   }
+
+   const query = { userId: ownerId };
+
+   if (memberId) query.memberId = memberId;
+
+   const historyEntries = await RecordHistory.find(query).sort({
+      createdAt: -1,
+   });
+
+   return res.json(historyEntries.map(normalizeHistoryEntry));
 }
 
 export async function createRecord(req, res) {
@@ -60,6 +130,12 @@ export async function createRecord(req, res) {
       oxygen,
       pulseRate,
       symptoms: symptoms ?? [],
+   });
+
+   await createHistoryEntryBestEffort({
+      record,
+      action: 'created',
+      actorUserId: req.user.id,
    });
 
    return res.status(201).json(normalize(record));
@@ -96,6 +172,12 @@ export async function updateRecord(req, res) {
    if (symptoms !== undefined) record.symptoms = symptoms;
    await record.save();
 
+   await createHistoryEntryBestEffort({
+      record,
+      action: 'updated',
+      actorUserId: req.user.id,
+   });
+
    return res.json(normalize(record));
 }
 
@@ -114,6 +196,12 @@ export async function deleteRecord(req, res) {
    }
 
    await record.deleteOne();
+
+   await createHistoryEntryBestEffort({
+      record,
+      action: 'deleted',
+      actorUserId: req.user.id,
+   });
 
    return res.status(204).send();
 }
