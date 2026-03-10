@@ -125,10 +125,7 @@ export default function HealthRecord() {
                apiRequest<Health[]>(`/records${careOwnerQuery}`, {
                   auth: true,
                }),
-            ]).catch((err) => {
-               console.warn('Failed to load record history', err);
-               return [];
-            });
+            ]);
 
             if (cancelled) return;
 

@@ -88,8 +88,7 @@ export default function TopNavbar() {
                   : 'Failed to load activity history',
             );
          } finally {
-            if (cancelled) return;
-            setIsHistoryLoading(false);
+            if (!cancelled) setIsHistoryLoading(false);
          }
       };
 
