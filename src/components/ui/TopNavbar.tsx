@@ -370,14 +370,7 @@ export default function TopNavbar() {
                                              record.
                                           </p>
                                           <p className="mt-1 text-xs text-slate-500">
-                                             {new Date(
-                                                entry.changedAt,
-                                             ).toLocaleString()}
-                                             {''}• Temp{' '}
-                                             {entry.snapshot.temperature} °C •
-                                             O₂{''}
-                                             {entry.snapshot.oxygen}% • Pulse{' '}
-                                             {entry.snapshot.pulseRate} bpm
+                                             {new Date(entry.changedAt).toLocaleString()} • Temp {entry.snapshot.temperature} °C • O₂ {entry.snapshot.oxygen}% • Pulse {entry.snapshot.pulseRate} bpm
                                           </p>
                                        </li>
                                     ))}
