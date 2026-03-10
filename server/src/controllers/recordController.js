@@ -82,7 +82,7 @@ export async function listRecords(req, res) {
 }
 
 export async function listRecordHistory(req, res) {
-   const { memberId } = req.query;
+   const { memberId, limit } = req.query;
 
    const ownerId = await resolveOwnerId(req);
 
@@ -94,9 +94,14 @@ export async function listRecordHistory(req, res) {
 
    if (memberId) query.memberId = memberId;
 
-   const historyEntries = await RecordHistory.find(query).sort({
-      createdAt: -1,
-   });
+   const parsedLimit = Number.parseInt(limit, 10);
+   const safeLimit = Number.isNaN(parsedLimit)
+      ? 25
+      : Math.max(1, Math.min(parsedLimit, 100));
+
+   const historyEntries = await RecordHistory.find(query)
+      .sort({ createdAt: -1 })
+      .limit(safeLimit);
 
    return res.json(historyEntries.map(normalizeHistoryEntry));
 }

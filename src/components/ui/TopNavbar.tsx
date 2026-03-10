@@ -6,7 +6,50 @@ import { useAuth } from '../../context/AuthContext';
 import { useCare } from '../../context/CareContext';
 import type { HealthRecordHistory } from '../../types/health';
 
+import { MdManageAccounts } from 'react-icons/md';
+import { MdManageHistory } from 'react-icons/md';
+
 import Logo from '../../assets/logo-dark.png';
+
+const RECENT_ACTIVITY_LIMIT = 25;
+
+function formatActivityDateLabel(dateValue: string) {
+   const date = new Date(dateValue);
+   const today = new Date();
+   const yesterday = new Date();
+   yesterday.setDate(today.getDate() - 1);
+
+   const isSameDay = (a: Date, b: Date) =>
+      a.getFullYear() === b.getFullYear() &&
+      a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+
+   if (isSameDay(date, today)) return 'Today';
+   if (isSameDay(date, yesterday)) return 'Yesterday';
+
+   return date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+   });
+}
+
+function groupHistoryByDay(entries: HealthRecordHistory[]) {
+   return entries.reduce<
+      Array<{ heading: string; items: HealthRecordHistory[] }>
+   >((groups, entry) => {
+      const heading = formatActivityDateLabel(entry.changedAt);
+      const lastGroup = groups[groups.length - 1];
+
+      if (!lastGroup || lastGroup.heading !== heading) {
+         groups.push({ heading, items: [entry] });
+         return groups;
+      }
+
+      lastGroup.items.push(entry);
+      return groups;
+   }, []);
+}
 
 export default function TopNavbar() {
    const { user } = useAuth();
@@ -65,10 +108,13 @@ export default function TopNavbar() {
          setIsHistoryLoading(true);
 
          try {
-            const careOwnerQuery = `?careOwnerId=${encodeURIComponent(selectedCareOwnerId)}`;
+            const params = new URLSearchParams({
+               careOwnerId: selectedCareOwnerId,
+               limit: String(RECENT_ACTIVITY_LIMIT),
+            });
 
             const history = await apiRequest<HealthRecordHistory[]>(
-               `/records/history${careOwnerQuery}`,
+               `/records/history?${params.toString()}`,
                {
                   auth: true,
                },
@@ -151,8 +197,9 @@ export default function TopNavbar() {
                      <button
                         type="button"
                         onClick={() => setIsCollaboratorModalOpen(true)}
-                        className="h-10 min-w-49 whitespace-nowrap rounded-md bg-blue-600 px-3 text-sm font-semibold text-white hover:bg-blue-700"
+                        className="inline-flex h-10 min-w-49 items-center gap-2 whitespace-nowrap rounded-md bg-blue-600 px-3 text-sm font-semibold text-white hover:bg-blue-700"
                      >
+                        <MdManageAccounts className="h-6 w-6" />
                         Manage Collaborators
                      </button>
                   )}
@@ -160,8 +207,9 @@ export default function TopNavbar() {
                   <button
                      type="button"
                      onClick={() => setIsHistoryPanelOpen(true)}
-                     className="h-10 min-w-40 whitespace-nowrap rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white hover:bg-indigo-700"
+                     className="inline-flex h-10 min-w-40 items-center gap-2 whitespace-nowrap rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white hover:bg-indigo-700"
                   >
+                     <MdManageHistory className="h-6 w-6" />
                      Activity History
                   </button>
                </div>
@@ -287,7 +335,8 @@ export default function TopNavbar() {
                      </div>
 
                      <p className="text-sm text-slate-500">
-                        Track who created, updated, or deleted health records.
+                        Showing the most recent {RECENT_ACTIVITY_LIMIT} actions
+                        to keep this panel fast and readable.
                      </p>
 
                      {isHistoryLoading ? (
@@ -303,25 +352,32 @@ export default function TopNavbar() {
                            No activity history yet.
                         </p>
                      ) : (
-                        <ul className="mt-4 space-y-3">
-                           {activityHistory.map((entry) => (
-                              <li
-                                 key={entry.id}
-                                 className="rounded-lg border border-slate-200 p-3"
-                              >
-                                 <p className="text-sm font-semibold text-slate-800">
-                                    {entry.actorName} {entry.action} a record.
-                                 </p>
-                                 <p className="mt-1 text-xs text-slate-500">
-                                    {new Date(entry.changedAt).toLocaleString()}
-                                    {''}• Temp {entry.snapshot.temperature} °C •
-                                    O₂{''}
-                                    {entry.snapshot.oxygen}% • Pulse{' '}
-                                    {entry.snapshot.pulseRate} bpm
-                                 </p>
-                              </li>
+                        <div className="mt-4 space-y-4">
+                           {groupHistoryByDay(activityHistory).map((group) => (
+                              <section key={group.heading}>
+                                 <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                    {group.heading}
+                                 </h4>
+
+                                 <ul className="space-y-3">
+                                    {group.items.map((entry) => (
+                                       <li
+                                          key={entry.id}
+                                          className="rounded-lg border border-slate-200 p-3"
+                                       >
+                                          <p className="text-sm font-semibold text-slate-800">
+                                             {entry.actorName} {entry.action} a
+                                             record.
+                                          </p>
+                                          <p className="mt-1 text-xs text-slate-500">
+                                             {new Date(entry.changedAt).toLocaleString()} • Temp {entry.snapshot.temperature} °C • O₂ {entry.snapshot.oxygen}% • Pulse {entry.snapshot.pulseRate} bpm
+                                          </p>
+                                       </li>
+                                    ))}
+                                 </ul>
+                              </section>
                            ))}
-                        </ul>
+                        </div>
                      )}
                   </aside>
                </div>,
