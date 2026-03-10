@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+import { apiRequest } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { useCare } from '../../context/CareContext';
+import type { HealthRecordHistory } from '../../types/health';
+
+import Logo from '../../assets/logo-dark.png';
 
 export default function TopNavbar() {
    const { user } = useAuth();
@@ -21,6 +25,13 @@ export default function TopNavbar() {
    const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] =
       useState(false);
 
+   const [isHistoryPanelOpen, setIsHistoryPanelOpen] = useState(false);
+   const [activityHistory, setActivityHistory] = useState<
+      HealthRecordHistory[]
+   >([]);
+   const [historyError, setHistoryError] = useState('');
+   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+
    useEffect(() => {
       if (!isCollaboratorModalOpen) return;
 
@@ -32,11 +43,82 @@ export default function TopNavbar() {
       return () => document.removeEventListener('keydown', onKeyDown);
    }, [isCollaboratorModalOpen]);
 
+   useEffect(() => {
+      if (!isHistoryPanelOpen) return;
+
+      const onKeyDown = (e: KeyboardEvent) => {
+         if (e.key === 'Escape') setIsHistoryPanelOpen(false);
+      };
+
+      document.addEventListener('keydown', onKeyDown);
+      return () => document.removeEventListener('keydown', onKeyDown);
+   }, [isHistoryPanelOpen]);
+
+   useEffect(() => {
+      let cancelled = false;
+
+      if (!selectedCareOwnerId || !isHistoryPanelOpen) {
+         return;
+      }
+
+      const loadActivityHistory = async () => {
+         setIsHistoryLoading(true);
+
+         try {
+            const careOwnerQuery = `?careOwnerId=${encodeURIComponent(selectedCareOwnerId)}`;
+
+            const history = await apiRequest<HealthRecordHistory[]>(
+               `/records/history${careOwnerQuery}`,
+               {
+                  auth: true,
+               },
+            );
+
+            if (cancelled) return;
+
+            setActivityHistory(history);
+            setHistoryError('');
+         } catch (err) {
+            if (cancelled) return;
+
+            setActivityHistory([]);
+            setHistoryError(
+               err instanceof Error
+                  ? err.message
+                  : 'Failed to load activity history',
+            );
+         } finally {
+            if (!cancelled) setIsHistoryLoading(false);
+         }
+      };
+
+      void loadActivityHistory();
+
+      return () => {
+         cancelled = true;
+      };
+   }, [isHistoryPanelOpen, selectedCareOwnerId]);
+
    return (
       <>
-         <header className="sticky top-0 z-30 border-b border-slate-200 bg-slate-900 rounded-b-xl px-4 py-3 shadow-sm mr-2 md:px-6">
-            <div className="flex items-center justify-center">
-               <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+         <header className="sticky top-0 z-30 mr-2 rounded-b-xl border-b border-slate-200 bg-slate-900 px-4 py-3 shadow-sm md:px-6">
+            <div className="grid items-center gap-3 md:grid-cols-[1fr_auto_1fr]">
+               <div className="justify-self-start">
+                  <div className="flex items-center overflow-hidden rounded-md">
+                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white">
+                        <img
+                           src={Logo}
+                           alt="Home Care App Logo"
+                           className="h-8 w-8 object-contain"
+                        />
+                     </div>
+                     <span className="ml-3 whitespace-nowrap text-sm font-semibold text-white">
+                        Home Care App
+                     </span>
+                  </div>
+               </div>
+
+               <div className="flex flex-col gap-2 sm:flex-row sm:items-end md:justify-self-center">
                   <label
                      htmlFor="care-account"
                      className="whitespace-nowrap text-xs font-semibold uppercase tracking-wide text-slate-100 sm:pb-2"
@@ -62,7 +144,9 @@ export default function TopNavbar() {
                         </option>
                      ))}
                   </select>
+               </div>
 
+               <div className="flex items-center gap-2 md:justify-self-end">
                   {selectedCareOwnerId === user?.id && (
                      <button
                         type="button"
@@ -72,6 +156,14 @@ export default function TopNavbar() {
                         Manage Collaborators
                      </button>
                   )}
+
+                  <button
+                     type="button"
+                     onClick={() => setIsHistoryPanelOpen(true)}
+                     className="h-10 min-w-40 whitespace-nowrap rounded-md bg-indigo-600 px-3 text-sm font-semibold text-white hover:bg-indigo-700"
+                  >
+                     Activity History
+                  </button>
                </div>
             </div>
 
@@ -160,6 +252,78 @@ export default function TopNavbar() {
                         ))}
                      </ul>
                   </div>
+               </div>,
+               document.body,
+            )}
+
+         {isHistoryPanelOpen &&
+            createPortal(
+               <div
+                  className="fixed inset-0 z-[1000] bg-slate-900/40"
+                  onClick={() => setIsHistoryPanelOpen(false)}
+               >
+                  <aside
+                     className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-white p-5 shadow-2xl"
+                     role="dialog"
+                     aria-modal="true"
+                     aria-labelledby="activity-history-title"
+                     onClick={(e) => e.stopPropagation()}
+                  >
+                     <div className="mb-4 flex items-center justify-between">
+                        <h3
+                           id="activity-history-title"
+                           className="text-lg font-semibold text-slate-900"
+                        >
+                           Activity History
+                        </h3>
+
+                        <button
+                           type="button"
+                           onClick={() => setIsHistoryPanelOpen(false)}
+                           className="rounded-md px-2 py-1 text-sm text-slate-500 hover:bg-slate-100"
+                        >
+                           Close
+                        </button>
+                     </div>
+
+                     <p className="text-sm text-slate-500">
+                        Track who created, updated, or deleted health records.
+                     </p>
+
+                     {isHistoryLoading ? (
+                        <p className="mt-4 rounded-lg border border-slate-200 p-3 text-sm text-slate-600">
+                           Loading history...
+                        </p>
+                     ) : historyError ? (
+                        <p className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                           {historyError}
+                        </p>
+                     ) : activityHistory.length === 0 ? (
+                        <p className="mt-4 rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">
+                           No activity history yet.
+                        </p>
+                     ) : (
+                        <ul className="mt-4 space-y-3">
+                           {activityHistory.map((entry) => (
+                              <li
+                                 key={entry.id}
+                                 className="rounded-lg border border-slate-200 p-3"
+                              >
+                                 <p className="text-sm font-semibold text-slate-800">
+                                    {entry.actorName} {entry.action} a record.
+                                 </p>
+                                 <p className="mt-1 text-xs text-slate-500">
+                                    {new Date(entry.changedAt).toLocaleString()}
+                                    {''}• Temp {entry.snapshot.temperature} °C •
+                                    O₂{''}
+                                    {entry.snapshot.oxygen}% • Pulse{' '}
+                                    {entry.snapshot.pulseRate} bpm
+                                 </p>
+                              </li>
+                           ))}
+                        </ul>
+                     )}
+                  </aside>
                </div>,
                document.body,
             )}
