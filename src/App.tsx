@@ -7,9 +7,9 @@ import {
 } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 
-import Sidebar from './components/ui/Sidebar';
-import TopNavbar from './components/ui/TopNavbar';
-import Loading from './components/ui/Loading';
+import Sidebar from './components/UI/Sidebar';
+import TopNavbar from './components/UI/TopNavbar';
+import Loading from './components/UI/Loading';
 
 import { useAuth, AuthProvider } from './context/AuthContext';
 import { CareProvider } from './context/CareContext';
